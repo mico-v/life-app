@@ -122,7 +122,7 @@ interface TaskDao {
      * Mark a task as completed (Pop)
      */
     @Query("UPDATE tasks SET isCompleted = 1, completedAt = :completedAt, progress = 1.0 WHERE id = :id")
-    suspend fun completeTask(id: String, completedAt: Long = System.currentTimeMillis())
+    suspend fun completeTask(id: String, completedAt: Long)
     
     /**
      * Update task progress

@@ -3,7 +3,7 @@ package com.example.android16demo.data.sync
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
+import androidx.security.crypto.MasterKey
 
 /**
  * Secure storage for sync-related data including auth tokens
@@ -24,11 +24,13 @@ class SyncPreferences(context: Context) {
     
     init {
         // Use encrypted shared preferences for sensitive data
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
         prefs = EncryptedSharedPreferences.create(
-            PREF_FILE_NAME,
-            masterKeyAlias,
             context,
+            PREF_FILE_NAME,
+            masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )

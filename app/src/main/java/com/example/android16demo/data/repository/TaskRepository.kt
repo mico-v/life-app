@@ -74,7 +74,7 @@ class TaskRepository(private val taskDao: TaskDao) {
     /**
      * Pop a task (mark as completed)
      */
-    suspend fun popTask(id: String) = taskDao.completeTask(id)
+    suspend fun popTask(id: String) = taskDao.completeTask(id, System.currentTimeMillis())
     
     /**
      * Delete a task

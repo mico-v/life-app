@@ -24,7 +24,6 @@ import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import com.example.android16demo.LifeApp
 import com.example.android16demo.data.entity.Task
 import kotlinx.coroutines.flow.first
@@ -71,7 +70,7 @@ private fun WidgetContent(
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = ColorProvider(GlanceTheme.colors.primary)
+                color = GlanceTheme.colors.primary
             )
         )
         
@@ -83,7 +82,7 @@ private fun WidgetContent(
                 text = "Current Task",
                 style = TextStyle(
                     fontSize = 10.sp,
-                    color = ColorProvider(GlanceTheme.colors.onSurfaceVariant)
+                    color = GlanceTheme.colors.onSurfaceVariant
                 )
             )
             
@@ -94,7 +93,7 @@ private fun WidgetContent(
                 style = TextStyle(
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp,
-                    color = ColorProvider(GlanceTheme.colors.onBackground)
+                    color = GlanceTheme.colors.onBackground
                 ),
                 maxLines = 2
             )
@@ -107,7 +106,7 @@ private fun WidgetContent(
                 text = "Progress: $progressPercent%",
                 style = TextStyle(
                     fontSize = 12.sp,
-                    color = ColorProvider(GlanceTheme.colors.primary)
+                    color = GlanceTheme.colors.primary
                 )
             )
         } else {
@@ -115,7 +114,7 @@ private fun WidgetContent(
                 text = "No active tasks",
                 style = TextStyle(
                     fontSize = 14.sp,
-                    color = ColorProvider(GlanceTheme.colors.onSurfaceVariant)
+                    color = GlanceTheme.colors.onSurfaceVariant
                 )
             )
             
@@ -125,12 +124,12 @@ private fun WidgetContent(
                 text = "Tap to add a task",
                 style = TextStyle(
                     fontSize = 12.sp,
-                    color = ColorProvider(GlanceTheme.colors.primary)
+                    color = GlanceTheme.colors.primary
                 )
             )
         }
         
-        Spacer(modifier = GlanceModifier.weight(1f))
+        Spacer(modifier = GlanceModifier.defaultWeight())
         
         // Footer with task count
         Row(
@@ -141,7 +140,7 @@ private fun WidgetContent(
                 text = "$todayTaskCount tasks remaining",
                 style = TextStyle(
                     fontSize = 10.sp,
-                    color = ColorProvider(GlanceTheme.colors.onSurfaceVariant)
+                    color = GlanceTheme.colors.onSurfaceVariant
                 )
             )
         }

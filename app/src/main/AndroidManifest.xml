@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Notification permission for Android 13+ -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Vibration permission for haptic feedback -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:name=".LifeApp"
         android:allowBackup="true"

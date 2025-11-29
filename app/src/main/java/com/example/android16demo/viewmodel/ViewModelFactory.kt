@@ -24,6 +24,9 @@ class ViewModelFactory(
             modelClass.isAssignableFrom(TaskDetailViewModel::class.java) -> {
                 TaskDetailViewModel(repository, taskId) as T
             }
+            modelClass.isAssignableFrom(ProfileViewModel::class.java) -> {
+                ProfileViewModel(repository) as T
+            }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }

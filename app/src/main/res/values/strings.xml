@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Android16 Demo</string>
+    <string name="app_name">Life App</string>
+    <string name="widget_description">Shows your current task and today\'s summary</string>
 </resources>

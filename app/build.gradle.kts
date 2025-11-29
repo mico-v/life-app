@@ -74,6 +74,9 @@ dependencies {
     // WorkManager (Phase 2 & 3)
     implementation(libs.androidx.work.runtime.ktx)
     
+    // Security (Phase 3)
+    implementation(libs.androidx.security.crypto)
+    
     // Glance for App Widget (Phase 4)
     implementation(libs.androidx.glance)
     implementation(libs.androidx.glance.appwidget)

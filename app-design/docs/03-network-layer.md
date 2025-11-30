@@ -12,11 +12,15 @@
 
 **路径:** `network/api/LifeAppApi.kt`
 
+> ⚠️ **配置说明:** `BASE_URL` 是占位符，部署前需要在 `RetrofitClient.kt` 中通过 `setBaseUrl()` 配置实际的生产服务器地址。
+
 ```kotlin
 interface LifeAppApi {
     
     companion object {
-        const val BASE_URL = "https://api.life-app.com/" // 占位符 URL
+        // 占位符 URL - 实际部署时需要配置
+        // 可通过 RetrofitClient.setBaseUrl() 动态更新
+        const val BASE_URL = "https://api.life-app.com/"
         const val API_VERSION = "v1"
     }
     

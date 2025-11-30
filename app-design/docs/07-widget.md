@@ -18,11 +18,16 @@
 class LifeAppWidget : GlanceAppWidget() {
     
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // 获取 Application 实例
+        // 获取 Application 实例 (可能为 null 如果 Context 不是 LifeApp)
         val app = context.applicationContext as? LifeApp
         val repository = app?.taskRepository
         
         // 获取活跃任务
+        // 注意: 使用 ?: emptyList() 处理以下情况:
+        // - repository 为 null (app 转换失败)
+        // - getActiveTasks() 返回空 Flow
+        // - Flow.first() 抛出异常
+        // 在这些情况下，Widget 将显示 "No active tasks"
         val activeTasks = repository?.getActiveTasks()?.first() ?: emptyList()
         val currentTask = activeTasks.firstOrNull()
         val todayTaskCount = activeTasks.size

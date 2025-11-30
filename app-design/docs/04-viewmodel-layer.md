@@ -272,6 +272,9 @@ class TaskDetailViewModel(
     }
     
     // 保存任务 (Push)
+    // 注意: 此方法同时处理创建和更新逻辑
+    // 重构建议: 可以拆分为 createTask() 和 updateTask() 两个私有方法
+    // 但当前实现更简洁，因为两者共享相同的 UI 流程
     fun saveTask() {
         if (!validateForm()) return
         

@@ -97,10 +97,16 @@ fun TaskItem(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
                 SwipeToDismissBoxValue.EndToStart -> {
+                    // 左滑删除
+                    // 注意: onDelete() 是 ViewModel 回调，如果操作失败:
+                    // 1. ViewModel 更新 errorMessage
+                    // 2. Screen 通过 LaunchedEffect 显示 Snackbar
+                    // 3. 由于使用 Flow 观察，列表会自动保持一致
                     onDelete()
                     true
                 }
                 SwipeToDismissBoxValue.StartToEnd -> {
+                    // 右滑完成 - 同上，错误通过 errorMessage 处理
                     onComplete()
                     true
                 }
@@ -127,6 +133,24 @@ fun TaskItem(
     }
 }
 ```
+
+#### 错误处理流程
+
+滑动操作的错误处理通过 ViewModel 和 StateFlow 实现：
+
+```
+用户滑动 → onComplete/onDelete() → ViewModel → Repository
+                                        ↓
+                               try { success } catch { errorMessage }
+                                        ↓
+                               StateFlow 更新 uiState.errorMessage
+                                        ↓
+                               LaunchedEffect 检测到变化
+                                        ↓
+                               Snackbar 显示错误消息
+```
+
+由于列表数据来自 `Flow<List<Task>>`，即使操作失败，UI 也会保持与数据库一致，不会出现状态不同步。
 
 #### TaskCard 内容
 

@@ -506,7 +506,7 @@ private fun DateTimePickerField(
                         tempSelectedDate = null
                     }
                 ) {
-                    Text("Use Default (24:00)")
+                    Text("Use Default (23:59)")
                 }
             }
         )

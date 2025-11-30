@@ -1,3 +1,26 @@
+const crypto = require('crypto');
+
+/**
+ * Constant-time comparison to prevent timing attacks
+ */
+function safeCompare(a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string') {
+        return false;
+    }
+    const bufferA = Buffer.from(a);
+    const bufferB = Buffer.from(b);
+    if (bufferA.length !== bufferB.length) {
+        // Use timingSafeEqual with same-length buffers to avoid length timing attacks
+        const paddedA = Buffer.alloc(Math.max(bufferA.length, bufferB.length));
+        const paddedB = Buffer.alloc(Math.max(bufferA.length, bufferB.length));
+        bufferA.copy(paddedA);
+        bufferB.copy(paddedB);
+        crypto.timingSafeEqual(paddedA, paddedB);
+        return false;
+    }
+    return crypto.timingSafeEqual(bufferA, bufferB);
+}
+
 /**
  * Authentication middleware
  * Verifies client token and server password
@@ -29,7 +52,7 @@ function authenticate(req, res, next) {
         });
     }
     
-    if (providedPassword !== serverPassword) {
+    if (!safeCompare(providedPassword, serverPassword)) {
         return res.status(403).json({
             success: false,
             message: 'Invalid server password'
@@ -49,7 +72,7 @@ function optionalAuth(req, res, next) {
     const providedPassword = req.headers['x-server-password'];
     const serverPassword = process.env.SERVER_PASSWORD;
     
-    if (clientToken && providedPassword && providedPassword === serverPassword) {
+    if (clientToken && providedPassword && safeCompare(providedPassword, serverPassword)) {
         req.clientToken = clientToken;
         req.isAuthenticated = true;
     } else {

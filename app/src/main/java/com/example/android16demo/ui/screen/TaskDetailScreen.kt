@@ -215,13 +215,15 @@ fun TaskDetailScreen(
                             onClick = { },
                             label = { Text(tag) },
                             trailingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Remove tag",
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clickable { onRemoveTag(tag) }
-                                )
+                                IconButton(
+                                    onClick = { onRemoveTag(tag) },
+                                    modifier = Modifier.size(16.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Remove tag"
+                                    )
+                                }
                             }
                         )
                     }

@@ -18,6 +18,11 @@ class SyncPreferences(context: Context) {
         private const val KEY_LAST_SYNC = "last_sync"
         private const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
         private const val KEY_SYNC_ON_WIFI_ONLY = "sync_on_wifi_only"
+        private const val KEY_SERVER_URL = "server_url"
+        private const val KEY_PUSH_TEMPLATE_ID = "push_template_id"
+        private const val KEY_USER_MOTTO = "user_motto"
+        private const val KEY_USER_STATUS = "user_status"
+        private const val KEY_USER_DISPLAY_NAME = "user_display_name"
     }
     
     private val prefs: SharedPreferences
@@ -59,6 +64,26 @@ class SyncPreferences(context: Context) {
     var syncOnWifiOnly: Boolean
         get() = prefs.getBoolean(KEY_SYNC_ON_WIFI_ONLY, true)
         set(value) = prefs.edit().putBoolean(KEY_SYNC_ON_WIFI_ONLY, value).apply()
+    
+    var serverUrl: String
+        get() = prefs.getString(KEY_SERVER_URL, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SERVER_URL, value).apply()
+    
+    var pushTemplateId: String?
+        get() = prefs.getString(KEY_PUSH_TEMPLATE_ID, null)
+        set(value) = prefs.edit().putString(KEY_PUSH_TEMPLATE_ID, value).apply()
+    
+    var userMotto: String
+        get() = prefs.getString(KEY_USER_MOTTO, "Push to Start, Pop to Finish") ?: "Push to Start, Pop to Finish"
+        set(value) = prefs.edit().putString(KEY_USER_MOTTO, value).apply()
+    
+    var userStatus: String
+        get() = prefs.getString(KEY_USER_STATUS, "Available") ?: "Available"
+        set(value) = prefs.edit().putString(KEY_USER_STATUS, value).apply()
+    
+    var userDisplayName: String
+        get() = prefs.getString(KEY_USER_DISPLAY_NAME, "Life App User") ?: "Life App User"
+        set(value) = prefs.edit().putString(KEY_USER_DISPLAY_NAME, value).apply()
     
     val isLoggedIn: Boolean
         get() = !authToken.isNullOrEmpty() && !userId.isNullOrEmpty()

@@ -29,6 +29,10 @@
 - 任务模板系统
 - 统计面板
 - 桌面小组件 (Glance)
+- **Profile 页面** - 用户信息、自定义格言、状态、成就系统
+- **Settings 页面** - 服务器配置、Push模板、账户管理
+- **页面切换动画** - 流畅的导航过渡动画
+- **时间轴优化** - 显示时间基线和当前时间指示器
 
 ---
 
@@ -86,25 +90,56 @@
 ### 导航结构
 ```
 MainActivity
-    └── NavHost
+    └── NavHost (with animations)
         ├── Queue Screen (主页 - 列表/时间轴视图)
         │   ├── TaskItem (滑动完成/删除)
         │   └── FAB (添加任务)
         ├── Archive Screen (归档 - 已完成任务)
-        ├── Profile Screen (个人中心 - 统计数据)
+        ├── Profile Screen (个人中心)
+        │   ├── 用户信息卡片 (可编辑名称/格言)
+        │   ├── 状态显示
+        │   ├── 统计数据面板
+        │   ├── 成就进度
+        │   └── 设置入口
+        ├── Settings Screen (设置)
+        │   ├── 账户管理 (登录/登出)
+        │   ├── 服务器配置 (域名/IP:端口)
+        │   ├── Push通知模板
+        │   └── 同步设置
         └── Task Detail Screen (任务详情 - 创建/编辑)
 ```
+
+### 导航动画
+| 动画类型 | 使用场景 | 效果 |
+|---------|---------|------|
+| fadeIn/fadeOut | 底部导航切换 | 淡入淡出 (300ms) |
+| slideLeft/Right | Settings 页面 | 左右滑动进入/退出 |
+| slideUp/Down | Task Detail | 从下方弹出/收起 |
 
 ### 核心界面
 
 | 界面 | 功能 | 文件位置 |
 |------|------|----------|
 | **Task Queue** | 主页，显示活跃任务队列 | `ui/screen/TaskQueueScreen.kt` |
-| **Timeline** | 时间轴视图，按时间分组 | `ui/screen/TimelineScreen.kt` |
+| **Timeline** | 时间轴视图，按时间分组，显示时间基线 | `ui/screen/TimelineScreen.kt` |
 | **Archive** | 已完成任务归档 | `ui/screen/ArchiveScreen.kt` |
 | **Task Detail** | 创建/编辑任务表单 | `ui/screen/TaskDetailScreen.kt` |
-| **Profile** | 统计数据可视化 | `ui/screen/ProfileScreen.kt` |
-| **Settings** | 同步设置与账户管理 | `ui/screen/SettingsScreen.kt` |
+| **Profile** | 用户信息、格言、状态、统计可视化、成就 | `ui/screen/ProfileScreen.kt` |
+| **Settings** | 服务器配置、Push模板、账户管理 | `ui/screen/SettingsScreen.kt` |
+
+### Profile 页面功能
+- **用户信息卡片**: 可编辑显示名称和个人格言
+- **状态指示器**: 显示 Available/Busy/Away 状态
+- **统计概览**: 今日完成、本周完成、活跃任务数
+- **周活动图表**: 过去7天的任务完成柱状图（动画）
+- **完成率环形图**: 按时完成率可视化（动画）
+- **成就系统**: First Steps, Getting Started, Productive, Master, Legend
+
+### Settings 页面功能
+- **账户管理**: 登录/登出功能
+- **服务器配置**: 远端推送目标服务器设置（域名/IP:端口）
+- **Push 模板**: 默认/紧急/静默/摘要 四种通知模板
+- **同步设置**: 手动同步、自动同步、仅Wi-Fi同步
 
 ### 核心交互
 - **Push (创建任务):** 点击 FAB → TaskDetailScreen → 填写表单 → 保存
@@ -189,7 +224,8 @@ data class TaskTemplate(
 | `viewmodel/HomeViewModel.kt` | 主页视图模型 | [docs/04-viewmodel-layer.md](docs/04-viewmodel-layer.md) |
 | `viewmodel/ArchiveViewModel.kt` | 归档视图模型 | [docs/04-viewmodel-layer.md](docs/04-viewmodel-layer.md) |
 | `viewmodel/TaskDetailViewModel.kt` | 任务详情视图模型 | [docs/04-viewmodel-layer.md](docs/04-viewmodel-layer.md) |
-| `viewmodel/ProfileViewModel.kt` | 个人中心视图模型 | [docs/04-viewmodel-layer.md](docs/04-viewmodel-layer.md) |
+| `viewmodel/ProfileViewModel.kt` | 个人中心视图模型（统计、用户配置） | [docs/04-viewmodel-layer.md](docs/04-viewmodel-layer.md) |
+| `viewmodel/SettingsViewModel.kt` | 设置视图模型（服务器、Push模板） | [docs/04-viewmodel-layer.md](docs/04-viewmodel-layer.md) |
 | `viewmodel/ViewModelFactory.kt` | ViewModel 工厂类 | [docs/04-viewmodel-layer.md](docs/04-viewmodel-layer.md) |
 
 ### 5️⃣ UI 层 (Compose)
@@ -321,7 +357,8 @@ app/src/main/java/com/example/android16demo/
 ├── viewmodel/
 │   ├── ArchiveViewModel.kt
 │   ├── HomeViewModel.kt
-│   ├── ProfileViewModel.kt
+│   ├── ProfileViewModel.kt    # 用户配置、统计数据
+│   ├── SettingsViewModel.kt   # 服务器配置、Push模板
 │   ├── TaskDetailViewModel.kt
 │   └── ViewModelFactory.kt
 ├── widget/

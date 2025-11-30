@@ -7,7 +7,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "build": "echo 'No build step required'",
-    "test": "echo 'Tests not implemented' && exit 0"
+    "test": "echo 'Tests not implemented' && exit 1"
   },
   "keywords": ["life-app", "task-management", "sync-server"],
   "author": "",

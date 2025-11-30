@@ -319,7 +319,7 @@ private fun ServerConfigCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = clientToken.take(8) + "..." + clientToken.takeLast(4),
+                text = "Hidden for security",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )

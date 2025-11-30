@@ -298,6 +298,8 @@ fun LifeAppMain() {
                         viewModel.deleteTask(taskId)
                     },
                     onClearAll = { viewModel.clearAllArchived() },
+                    onSearchQueryChange = { viewModel.updateSearchQuery(it) },
+                    onTagFilterChange = { viewModel.updateSelectedTag(it) },
                     onErrorDismiss = { viewModel.clearError() }
                 )
             }
@@ -376,7 +378,10 @@ fun LifeAppMain() {
                     onAutoSyncToggle = { viewModel.setAutoSync(it) },
                     onWifiOnlyToggle = { viewModel.setWifiOnly(it) },
                     onServerUrlChange = { viewModel.updateServerUrl(it) },
+                    onServerPasswordChange = { viewModel.updateServerPassword(it) },
                     onPushTemplateChange = { viewModel.updatePushTemplate(it) },
+                    onThemeModeChange = { viewModel.updateThemeMode(it) },
+                    onLanguageChange = { viewModel.updateLanguage(it) },
                     onNavigateBack = { navController.popBackStack() },
                     onErrorDismiss = { viewModel.clearMessages() }
                 )
@@ -432,6 +437,8 @@ fun LifeAppMain() {
                     onPriorityChange = { viewModel.updatePriority(it) },
                     onProgressChange = { viewModel.updateProgress(it) },
                     onIsPublicChange = { viewModel.updateIsPublic(it) },
+                    onAddTag = { viewModel.addTag(it) },
+                    onRemoveTag = { viewModel.removeTag(it) },
                     onSave = { viewModel.saveTask() },
                     onNavigateBack = { navController.popBackStack() },
                     onErrorDismiss = { viewModel.clearError() }

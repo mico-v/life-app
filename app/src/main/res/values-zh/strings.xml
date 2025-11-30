@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用信息 -->
+    <string name="app_name">生活应用</string>
+    <string name="app_slogan">入栈开始，出栈完成</string>
+    <string name="widget_description">显示当前任务和今日摘要</string>
+    
+    <!-- 导航 -->
+    <string name="nav_queue">队列</string>
+    <string name="nav_archive">归档</string>
+    <string name="nav_profile">个人</string>
+    <string name="nav_settings">设置</string>
+    
+    <!-- 任务队列 -->
+    <string name="title_task_queue">任务队列</string>
+    <string name="title_timeline">时间轴</string>
+    <string name="empty_queue_title">暂无活动任务</string>
+    <string name="empty_queue_message">添加新任务开始使用</string>
+    <string name="view_list">列表视图</string>
+    <string name="view_timeline">时间轴视图</string>
+    
+    <!-- 任务项 -->
+    <string name="task_priority_low">低</string>
+    <string name="task_priority_medium">中</string>
+    <string name="task_priority_high">高</string>
+    <string name="task_overdue">已逾期</string>
+    <string name="task_completed">已完成</string>
+    <string name="swipe_complete">向右滑动完成</string>
+    <string name="swipe_delete">向左滑动删除</string>
+    
+    <!-- 任务详情 -->
+    <string name="title_push_new_task">添加新任务</string>
+    <string name="title_edit_task">编辑任务</string>
+    <string name="label_title">标题 *</string>
+    <string name="label_description">描述</string>
+    <string name="label_deadline">截止时间</string>
+    <string name="label_start_time">开始时间</string>
+    <string name="label_priority">优先级</string>
+    <string name="label_progress">进度</string>
+    <string name="label_public_task">公开任务</string>
+    <string name="label_tags">标签</string>
+    <string name="hint_title">需要做什么？</string>
+    <string name="hint_description">添加详情...</string>
+    <string name="hint_add_tag">添加标签</string>
+    <string name="btn_push_task">添加任务</string>
+    <string name="btn_update_task">更新任务</string>
+    <string name="btn_clear">清除</string>
+    <string name="btn_ok">确定</string>
+    <string name="btn_cancel">取消</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_delete">删除</string>
+    <string name="btn_back">返回</string>
+    <string name="error_title_required">标题不能为空</string>
+    <string name="public_task_hint">在公开状态页面显示</string>
+    
+    <!-- 归档 -->
+    <string name="title_archive">归档</string>
+    <string name="empty_archive_title">归档为空</string>
+    <string name="empty_archive_message">已完成的任务将显示在这里</string>
+    <string name="clear_archive">清空归档</string>
+    <string name="confirm_clear_archive">确定要删除所有已归档的任务吗？此操作不可撤销。</string>
+    <string name="btn_delete_all">全部删除</string>
+    <string name="search_hint">搜索任务...</string>
+    <string name="filter_by_tag">按标签筛选</string>
+    <string name="all_tags">全部</string>
+    
+    <!-- 个人中心 -->
+    <string name="title_profile">个人中心</string>
+    <string name="label_display_name">显示名称</string>
+    <string name="label_motto">个人格言</string>
+    <string name="label_status">状态</string>
+    <string name="status_available">空闲</string>
+    <string name="status_busy">忙碌</string>
+    <string name="status_away">离开</string>
+    <string name="btn_edit">编辑</string>
+    <string name="btn_refresh">刷新</string>
+    
+    <!-- 统计 -->
+    <string name="title_statistics">统计</string>
+    <string name="stats_today">今日</string>
+    <string name="stats_this_week">本周</string>
+    <string name="stats_active">进行中</string>
+    <string name="title_weekly_activity">周活动</string>
+    <string name="title_completion_rate">按时完成率</string>
+    <string name="label_on_time">按时完成</string>
+    <string name="title_all_time">历史完成任务数</string>
+    <string name="label_tasks_popped">已完成任务</string>
+    
+    <!-- 成就 -->
+    <string name="title_achievements">成就</string>
+    <string name="achievement_first_steps">初试牛刀</string>
+    <string name="achievement_getting_started">渐入佳境</string>
+    <string name="achievement_productive">效率达人</string>
+    <string name="achievement_master">任务大师</string>
+    <string name="achievement_legend">传奇人物</string>
+    <string name="achievement_complete_tasks">完成 %d 个任务</string>
+    
+    <!-- 设置 -->
+    <string name="title_settings">设置</string>
+    <string name="section_account">账户</string>
+    <string name="section_server">服务器配置</string>
+    <string name="section_sync">同步</string>
+    <string name="section_appearance">外观</string>
+    <string name="section_language">语言</string>
+    <string name="section_about">关于</string>
+    
+    <!-- 账户 -->
+    <string name="label_username">用户名</string>
+    <string name="label_password">密码</string>
+    <string name="btn_login">登录</string>
+    <string name="btn_logout">退出登录</string>
+    <string name="login_prompt">登录以同步</string>
+    <string name="login_hint">备份任务并随时随地访问</string>
+    <string name="logged_in">已登录</string>
+    
+    <!-- 服务器配置 -->
+    <string name="label_server_url">服务器地址</string>
+    <string name="label_server_password">服务器密码</string>
+    <string name="label_client_token">客户端令牌</string>
+    <string name="server_url_hint">例如：example.com:8080 或 192.168.1.100:8080</string>
+    <string name="server_not_configured">未配置</string>
+    <string name="server_config_hint">配置远端推送服务器</string>
+    <string name="error_invalid_url">格式无效。请使用 域名:端口 或 IP:端口</string>
+    
+    <!-- 推送模板 -->
+    <string name="title_push_templates">推送通知</string>
+    <string name="push_template_default">默认通知</string>
+    <string name="push_template_urgent">紧急提醒</string>
+    <string name="push_template_silent">静默推送</string>
+    <string name="push_template_summary">每日摘要</string>
+    <string name="push_template_hint">选择远端推送的通知样式</string>
+    
+    <!-- 同步 -->
+    <string name="btn_sync_now">立即同步</string>
+    <string name="label_last_sync">上次同步：%s</string>
+    <string name="label_auto_sync">自动同步</string>
+    <string name="auto_sync_hint">在后台自动同步</string>
+    <string name="label_wifi_only">仅限 Wi-Fi</string>
+    <string name="wifi_only_hint">仅在连接 Wi-Fi 时同步</string>
+    <string name="sync_success">同步成功</string>
+    <string name="sync_failed">同步失败：%s</string>
+    
+    <!-- 外观 -->
+    <string name="label_theme">主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    
+    <!-- 语言 -->
+    <string name="label_language">语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">中文</string>
+    
+    <!-- 关于 -->
+    <string name="about_version">版本 %s</string>
+    
+    <!-- 时间轴 -->
+    <string name="timeline_now">现在</string>
+    <string name="timeline_overdue">已逾期</string>
+    <string name="timeline_today">今天</string>
+    <string name="timeline_tomorrow">明天</string>
+    <string name="timeline_this_week">本周</string>
+    <string name="timeline_later">以后</string>
+    
+    <!-- 星期 -->
+    <string name="day_mon">周一</string>
+    <string name="day_tue">周二</string>
+    <string name="day_wed">周三</string>
+    <string name="day_thu">周四</string>
+    <string name="day_fri">周五</string>
+    <string name="day_sat">周六</string>
+    <string name="day_sun">周日</string>
+    
+    <!-- 小组件 -->
+    <string name="widget_title">生活应用</string>
+    <string name="widget_current_task">当前任务</string>
+    <string name="widget_no_tasks">暂无活动任务</string>
+    <string name="widget_tap_to_add">点击添加任务</string>
+    <string name="widget_tasks_remaining">还有 %d 个任务</string>
+    
+    <!-- 通用 -->
+    <string name="loading">加载中...</string>
+    <string name="error">错误</string>
+    <string name="success">成功</string>
+    <string name="completed">已完成</string>
+    <string name="not_set">未设置</string>
+</resources>

@@ -15,6 +15,9 @@ import kotlinx.coroutines.launch
  */
 data class HomeUiState(
     val activeTasks: List<Task> = emptyList(),
+    val filteredTasks: List<Task> = emptyList(),
+    val allTags: List<String> = emptyList(),
+    val selectedTag: String? = null,
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -26,6 +29,8 @@ class HomeViewModel(private val repository: TaskRepository) : ViewModel() {
     
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    
+    private val _selectedTag = MutableStateFlow<String?>(null)
     
     init {
         loadActiveTasks()
@@ -44,13 +49,45 @@ class HomeViewModel(private val repository: TaskRepository) : ViewModel() {
                     )
                 }
                 .collect { tasks ->
+                    // Extract all unique tags from tasks
+                    val allTags = tasks.flatMap { it.getTagList() }.distinct().sorted()
+                    
                     _uiState.value = _uiState.value.copy(
                         activeTasks = tasks,
+                        allTags = allTags,
                         isLoading = false,
                         errorMessage = null
                     )
+                    
+                    // Apply filters
+                    applyTagFilter()
                 }
         }
+    }
+    
+    /**
+     * Update selected tag filter
+     */
+    fun updateSelectedTag(tag: String?) {
+        _selectedTag.value = tag
+        _uiState.value = _uiState.value.copy(selectedTag = tag)
+        applyTagFilter()
+    }
+    
+    /**
+     * Apply tag filter
+     */
+    private fun applyTagFilter() {
+        val tasks = _uiState.value.activeTasks
+        val tag = _selectedTag.value
+        
+        val filtered = if (tag == null) {
+            tasks
+        } else {
+            tasks.filter { task -> task.hasTag(tag) }
+        }
+        
+        _uiState.value = _uiState.value.copy(filteredTasks = filtered)
     }
     
     /**

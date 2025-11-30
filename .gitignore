@@ -86,3 +86,12 @@ lint/tmp/
 
 # Kotlin
 .kotlin/
+
+# Server dependencies
+Server/node_modules/
+
+# Server environment files
+Server/.env
+
+# Server database files (data is local)
+Server/data/*.db

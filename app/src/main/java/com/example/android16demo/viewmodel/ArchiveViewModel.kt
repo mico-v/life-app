@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -15,6 +16,10 @@ import kotlinx.coroutines.launch
  */
 data class ArchiveUiState(
     val archivedTasks: List<Task> = emptyList(),
+    val filteredTasks: List<Task> = emptyList(),
+    val allTags: List<String> = emptyList(),
+    val selectedTag: String? = null,
+    val searchQuery: String = "",
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -26,6 +31,9 @@ class ArchiveViewModel(private val repository: TaskRepository) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ArchiveUiState())
     val uiState: StateFlow<ArchiveUiState> = _uiState.asStateFlow()
+    
+    private val _searchQuery = MutableStateFlow("")
+    private val _selectedTag = MutableStateFlow<String?>(null)
     
     init {
         loadArchivedTasks()
@@ -44,13 +52,59 @@ class ArchiveViewModel(private val repository: TaskRepository) : ViewModel() {
                     )
                 }
                 .collect { tasks ->
+                    // Extract all unique tags from tasks
+                    val allTags = tasks.flatMap { it.getTagList() }.distinct().sorted()
+                    
                     _uiState.value = _uiState.value.copy(
                         archivedTasks = tasks,
+                        allTags = allTags,
                         isLoading = false,
                         errorMessage = null
                     )
+                    
+                    // Apply filters
+                    applyFilters()
                 }
         }
+    }
+    
+    /**
+     * Update search query
+     */
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+        applyFilters()
+    }
+    
+    /**
+     * Update selected tag filter
+     */
+    fun updateSelectedTag(tag: String?) {
+        _selectedTag.value = tag
+        _uiState.value = _uiState.value.copy(selectedTag = tag)
+        applyFilters()
+    }
+    
+    /**
+     * Apply search and tag filters
+     */
+    private fun applyFilters() {
+        val tasks = _uiState.value.archivedTasks
+        val query = _searchQuery.value.lowercase().trim()
+        val tag = _selectedTag.value
+        
+        val filtered = tasks.filter { task ->
+            val matchesSearch = query.isEmpty() || 
+                task.title.lowercase().contains(query) ||
+                (task.description?.lowercase()?.contains(query) == true)
+            
+            val matchesTag = tag == null || task.hasTag(tag)
+            
+            matchesSearch && matchesTag
+        }
+        
+        _uiState.value = _uiState.value.copy(filteredTasks = filtered)
     }
     
     /**

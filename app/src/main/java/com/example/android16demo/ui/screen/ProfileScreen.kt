@@ -246,18 +246,16 @@ private fun UserInfoCard(
                         )
                     }
                 }
-                IconButton(onClick = { 
-                    if (isEditing) {
-                        onUpdateDisplayName(editName)
-                        onUpdateMotto(editMotto)
+                if (!isEditing) {
+                    IconButton(onClick = { 
+                        isEditing = true 
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit profile",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
-                    isEditing = !isEditing 
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = if (isEditing) "Save" else "Edit",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
                 }
             }
             

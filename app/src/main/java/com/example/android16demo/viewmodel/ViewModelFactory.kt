@@ -32,7 +32,8 @@ class ViewModelFactory(
                 ProfileViewModel(repository, syncPreferences) as T
             }
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
-                SettingsViewModel(syncPreferences!!, templateRepository) as T
+                requireNotNull(syncPreferences) { "syncPreferences is required for SettingsViewModel" }
+                SettingsViewModel(syncPreferences, templateRepository) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }

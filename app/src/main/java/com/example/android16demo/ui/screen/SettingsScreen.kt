@@ -240,6 +240,9 @@ private fun ServerConfigCard(
     onSaveServerUrl: () -> Unit,
     onCancelEditing: () -> Unit
 ) {
+    // Validate server URL format (domain:port or IP:port)
+    val isValidUrl = serverUrl.isBlank() || isValidServerUrl(serverUrl)
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -286,7 +289,11 @@ private fun ServerConfigCard(
                     label = { Text("Server URL (domain:port or IP:port)") },
                     placeholder = { Text("example.com:8080 or 192.168.1.100:8080") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    isError = !isValidUrl,
+                    supportingText = if (!isValidUrl) {
+                        { Text("Invalid format. Use domain:port or IP:port") }
+                    } else null
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
@@ -301,7 +308,8 @@ private fun ServerConfigCard(
                     }
                     Button(
                         onClick = onSaveServerUrl,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        enabled = isValidUrl
                     ) {
                         Text("Save")
                     }
@@ -721,6 +729,25 @@ private fun AboutCard() {
 private fun formatSyncTime(timestamp: Long): String {
     val dateFormat = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
     return dateFormat.format(Date(timestamp))
+}
+
+/**
+ * Validates server URL format (domain:port or IP:port)
+ */
+private fun isValidServerUrl(url: String): Boolean {
+    if (url.isBlank()) return true
+    
+    // Pattern for domain:port or IP:port
+    val domainPortPattern = Regex("""^[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)*:\d{1,5}$""")
+    val ipPortPattern = Regex("""^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$""")
+    
+    if (!domainPortPattern.matches(url) && !ipPortPattern.matches(url)) {
+        return false
+    }
+    
+    // Validate port range (1-65535)
+    val port = url.substringAfterLast(':').toIntOrNull() ?: return false
+    return port in 1..65535
 }
 
 @Preview(showBackground = true)

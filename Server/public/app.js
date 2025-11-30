@@ -240,7 +240,17 @@ class LifeAppDashboard {
         const completedTasks = this.tasks.filter(t => t.isCompleted).length;
         document.getElementById('profile-active').textContent = activeTasks;
         document.getElementById('profile-completed').textContent = completedTasks;
-        document.getElementById('profile-today').textContent = 0; // Would need actual data
+        // Calculate today's completed tasks
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(todayStart);
+        todayEnd.setDate(todayEnd.getDate() + 1);
+        const completedToday = this.tasks.filter(t => {
+            // Use t.completedAt if available, otherwise fallback to t.dueDate if that's how completion is tracked
+            const completedDate = t.completedAt ? new Date(t.completedAt) : (t.isCompleted && t.dueDate ? new Date(t.dueDate) : null);
+            return t.isCompleted && completedDate && completedDate >= todayStart && completedDate < todayEnd;
+        }).length;
+        document.getElementById('profile-today').textContent = completedToday;
     }
     
     renderTimeline() {

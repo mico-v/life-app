@@ -741,8 +741,23 @@ private fun isValidServerUrl(url: String): Boolean {
     val domainPortPattern = Regex("""^[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)*:\d{1,5}$""")
     val ipPortPattern = Regex("""^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$""")
     
-    if (!domainPortPattern.matches(url) && !ipPortPattern.matches(url)) {
+    val isDomain = domainPortPattern.matches(url)
+    val isIp = ipPortPattern.matches(url)
+    
+    if (!isDomain && !isIp) {
         return false
+    }
+    
+    // Validate IP octets if it's an IP address
+    if (isIp) {
+        val ipPart = url.substringBeforeLast(':')
+        val octets = ipPart.split('.')
+        if (octets.any { octet -> 
+            val value = octet.toIntOrNull() ?: return false
+            value !in 0..255
+        }) {
+            return false
+        }
     }
     
     // Validate port range (1-65535)

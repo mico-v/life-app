@@ -200,6 +200,14 @@ private fun UserInfoCard(
     var editName by remember { mutableStateOf(userProfile.displayName) }
     var editMotto by remember { mutableStateOf(userProfile.motto) }
     
+    // Sync edit state with userProfile updates when not editing
+    LaunchedEffect(userProfile.displayName, userProfile.motto) {
+        if (!isEditing) {
+            editName = userProfile.displayName
+            editMotto = userProfile.motto
+        }
+    }
+    
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(

@@ -2,6 +2,8 @@
 
 > **"Push to Start, Pop to Finish."**
 
+[中文文档 (Chinese README)](README_CN.md)
+
 A task management app based on the **Push/Pop stack concept** - treat your daily tasks like a computer stack.
 
 ## ✨ Features
@@ -13,15 +15,18 @@ A task management app based on the **Push/Pop stack concept** - treat your daily
 - **Timeline View** - Visualize tasks on a time-based flow
 
 ### Advanced Features
-- **Archive** - View completed task history
+- **Archive** - View completed task history with search and tag filtering
 - **Templates** - Quick-start with preset task templates (Work, Study, Exercise, etc.)
 - **Statistics** - Track completion rate, daily/weekly progress
 - **Widget** - Home screen widget showing current task
 - **Notifications** - DDL reminders and daily summary
+- **Tags** - Organize tasks with custom tags
+- **Theme** - Support for Light/Dark/System themes
+- **Localization** - English and Chinese language support
 
-### Sync & Cloud (Prepared)
-- **Server Sync** - RESTful API integration ready
-- **Public Status** - Share your busy/free status
+### Sync & Cloud
+- **Server Sync** - RESTful API with password-based authentication
+- **Public Status** - Share your busy/free status via web dashboard
 - **Privacy Control** - Choose which tasks to make public
 
 ## 🛠 Tech Stack
@@ -82,6 +87,7 @@ For detailed project documentation, see:
 - **[UI Layer](app-design/docs/05-ui-layer.md)** - Compose UI components
 - **[Workers](app-design/docs/06-workers.md)** - Background tasks
 - **[Widget](app-design/docs/07-widget.md)** - Home screen widget
+- **[Server Deployment](Server.md)** - Server setup guide (Chinese)
 
 ## 📁 Project Structure
 

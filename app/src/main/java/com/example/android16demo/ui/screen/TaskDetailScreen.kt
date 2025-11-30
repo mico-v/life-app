@@ -428,9 +428,11 @@ private fun DateTimePickerField(
                                 // Default to end of day (24:00 / 00:00 next day)
                                 val calendar = Calendar.getInstance()
                                 calendar.timeInMillis = millis
-                                calendar.set(Calendar.HOUR_OF_DAY, 23)
-                                calendar.set(Calendar.MINUTE, 59)
-                                calendar.set(Calendar.SECOND, 59)
+                                calendar.add(Calendar.DAY_OF_MONTH, 1)
+                                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                                calendar.set(Calendar.MINUTE, 0)
+                                calendar.set(Calendar.SECOND, 0)
+                                calendar.set(Calendar.MILLISECOND, 0)
                                 onTimestampSelected(calendar.timeInMillis)
                             }
                         }

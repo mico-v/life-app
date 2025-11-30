@@ -28,10 +28,10 @@
         android:fillColor="#FFFFFF"
         android:pathData="M42,48h24v5h-24z"/>
     
-    <!-- Upward arrow (Push) on left -->
+    <!-- Upward arrow (Push) above stack, centered horizontally -->
     <path
         android:fillColor="#3DDC84"
-        android:pathData="M34,52l-4,-6l4,-6l0,4l4,0l0,4l-4,0z"/>
+        android:pathData="M54,42l-6,8h4v6h4v-6h4z"/>
     
     <!-- Checkmark on top layer indicating completion -->
     <path

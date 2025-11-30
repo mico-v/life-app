@@ -298,6 +298,8 @@ fun LifeAppMain() {
                         viewModel.deleteTask(taskId)
                     },
                     onClearAll = { viewModel.clearAllArchived() },
+                    onSearchQueryChange = { viewModel.updateSearchQuery(it) },
+                    onTagFilterChange = { viewModel.updateSelectedTag(it) },
                     onErrorDismiss = { viewModel.clearError() }
                 )
             }

@@ -1,9 +1,11 @@
 package com.example.android16demo.ui.screen
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,19 +14,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -52,7 +59,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Archive Screen - Shows completed (popped) tasks
+ * Archive Screen - Shows completed (popped) tasks with search and filter
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +67,8 @@ fun ArchiveScreen(
     uiState: ArchiveUiState,
     onDeleteTask: (String) -> Unit,
     onClearAll: () -> Unit,
+    onSearchQueryChange: (String) -> Unit = {},
+    onTagFilterChange: (String?) -> Unit = {},
     onErrorDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -136,18 +145,95 @@ fun ArchiveScreen(
                     )
                 }
                 else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(
-                            items = uiState.archivedTasks,
-                            key = { it.id }
-                        ) { task ->
-                            ArchivedTaskCard(
-                                task = task,
-                                onDelete = { onDeleteTask(task.id) }
-                            )
+                    Column {
+                        // Search bar
+                        OutlinedTextField(
+                            value = uiState.searchQuery,
+                            onValueChange = onSearchQueryChange,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            placeholder = { Text("Search tasks...") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search"
+                                )
+                            },
+                            trailingIcon = {
+                                if (uiState.searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { onSearchQueryChange("") }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Clear search"
+                                        )
+                                    }
+                                }
+                            },
+                            singleLine = true
+                        )
+                        
+                        // Tag filter chips
+                        if (uiState.allTags.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilterChip(
+                                    selected = uiState.selectedTag == null,
+                                    onClick = { onTagFilterChange(null) },
+                                    label = { Text("All") }
+                                )
+                                uiState.allTags.forEach { tag ->
+                                    FilterChip(
+                                        selected = uiState.selectedTag == tag,
+                                        onClick = { 
+                                            onTagFilterChange(if (uiState.selectedTag == tag) null else tag)
+                                        },
+                                        label = { Text(tag) }
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // Task list
+                        val displayTasks = if (uiState.searchQuery.isNotEmpty() || uiState.selectedTag != null) {
+                            uiState.filteredTasks
+                        } else {
+                            uiState.archivedTasks
+                        }
+                        
+                        if (displayTasks.isEmpty() && (uiState.searchQuery.isNotEmpty() || uiState.selectedTag != null)) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No tasks match your search",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(
+                                    items = displayTasks,
+                                    key = { it.id }
+                                ) { task ->
+                                    ArchivedTaskCard(
+                                        task = task,
+                                        onDelete = { onDeleteTask(task.id) }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -271,13 +357,18 @@ fun ArchiveScreenPreview() {
                     Task(
                         title = "Completed Task 2",
                         isCompleted = true,
-                        completedAt = System.currentTimeMillis() - 3600000
+                        completedAt = System.currentTimeMillis() - 3600000,
+                        tags = "Work,Important"
                     )
                 ),
+                filteredTasks = emptyList(),
+                allTags = listOf("Work", "Important", "Personal"),
                 isLoading = false
             ),
             onDeleteTask = {},
             onClearAll = {},
+            onSearchQueryChange = {},
+            onTagFilterChange = {},
             onErrorDismiss = {}
         )
     }

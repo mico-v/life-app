@@ -1,4 +1,187 @@
 <resources>
+    <!-- App Info -->
     <string name="app_name">Life App</string>
+    <string name="app_slogan">Push to Start, Pop to Finish</string>
     <string name="widget_description">Shows your current task and today\'s summary</string>
+    
+    <!-- Navigation -->
+    <string name="nav_queue">Queue</string>
+    <string name="nav_archive">Archive</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Queue/Task List -->
+    <string name="title_task_queue">Task Queue</string>
+    <string name="title_timeline">Timeline</string>
+    <string name="empty_queue_title">No Active Tasks</string>
+    <string name="empty_queue_message">Push a new task to get started</string>
+    <string name="view_list">List view</string>
+    <string name="view_timeline">Timeline view</string>
+    
+    <!-- Task Item -->
+    <string name="task_priority_low">Low</string>
+    <string name="task_priority_medium">Medium</string>
+    <string name="task_priority_high">High</string>
+    <string name="task_overdue">Overdue</string>
+    <string name="task_completed">Completed</string>
+    <string name="swipe_complete">Swipe right to complete</string>
+    <string name="swipe_delete">Swipe left to delete</string>
+    
+    <!-- Task Detail -->
+    <string name="title_push_new_task">Push New Task</string>
+    <string name="title_edit_task">Edit Task</string>
+    <string name="label_title">Title *</string>
+    <string name="label_description">Description</string>
+    <string name="label_deadline">Deadline</string>
+    <string name="label_start_time">Start Time</string>
+    <string name="label_priority">Priority</string>
+    <string name="label_progress">Progress</string>
+    <string name="label_public_task">Public Task</string>
+    <string name="label_tags">Tags</string>
+    <string name="hint_title">What needs to be done?</string>
+    <string name="hint_description">Add details...</string>
+    <string name="hint_add_tag">Add tag</string>
+    <string name="btn_push_task">Push Task</string>
+    <string name="btn_update_task">Update Task</string>
+    <string name="btn_clear">Clear</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_back">Back</string>
+    <string name="error_title_required">Title is required</string>
+    <string name="public_task_hint">Show on your public status page</string>
+    
+    <!-- Archive -->
+    <string name="title_archive">Archive</string>
+    <string name="empty_archive_title">Archive is Empty</string>
+    <string name="empty_archive_message">Completed tasks will appear here</string>
+    <string name="clear_archive">Clear Archive</string>
+    <string name="confirm_clear_archive">Are you sure you want to delete all archived tasks? This cannot be undone.</string>
+    <string name="btn_delete_all">Delete All</string>
+    <string name="search_hint">Search tasks...</string>
+    <string name="filter_by_tag">Filter by tag</string>
+    <string name="all_tags">All</string>
+    
+    <!-- Profile -->
+    <string name="title_profile">Profile</string>
+    <string name="label_display_name">Display Name</string>
+    <string name="label_motto">Personal Motto</string>
+    <string name="label_status">Status</string>
+    <string name="status_available">Available</string>
+    <string name="status_busy">Busy</string>
+    <string name="status_away">Away</string>
+    <string name="btn_edit">Edit</string>
+    <string name="btn_refresh">Refresh</string>
+    
+    <!-- Statistics -->
+    <string name="title_statistics">Statistics</string>
+    <string name="stats_today">Today</string>
+    <string name="stats_this_week">This Week</string>
+    <string name="stats_active">Active</string>
+    <string name="title_weekly_activity">Weekly Activity</string>
+    <string name="title_completion_rate">On-Time Completion Rate</string>
+    <string name="label_on_time">on time</string>
+    <string name="title_all_time">All-Time Tasks Completed</string>
+    <string name="label_tasks_popped">tasks popped</string>
+    
+    <!-- Achievements -->
+    <string name="title_achievements">Achievements</string>
+    <string name="achievement_first_steps">First Steps</string>
+    <string name="achievement_getting_started">Getting Started</string>
+    <string name="achievement_productive">Productive</string>
+    <string name="achievement_master">Master</string>
+    <string name="achievement_legend">Legend</string>
+    <string name="achievement_complete_tasks">Complete %d tasks</string>
+    
+    <!-- Settings -->
+    <string name="title_settings">Settings</string>
+    <string name="section_account">Account</string>
+    <string name="section_server">Server Configuration</string>
+    <string name="section_sync">Sync</string>
+    <string name="section_appearance">Appearance</string>
+    <string name="section_language">Language</string>
+    <string name="section_about">About</string>
+    
+    <!-- Account -->
+    <string name="label_username">Username</string>
+    <string name="label_password">Password</string>
+    <string name="btn_login">Login</string>
+    <string name="btn_logout">Logout</string>
+    <string name="login_prompt">Sign in to sync</string>
+    <string name="login_hint">Backup your tasks and access them anywhere</string>
+    <string name="logged_in">Logged in</string>
+    
+    <!-- Server Configuration -->
+    <string name="label_server_url">Server URL</string>
+    <string name="label_server_password">Server Password</string>
+    <string name="label_client_token">Client Token</string>
+    <string name="server_url_hint">example.com:8080 or 192.168.1.100:8080</string>
+    <string name="server_not_configured">Not configured</string>
+    <string name="server_config_hint">Configure the server for push notifications</string>
+    <string name="error_invalid_url">Invalid format. Use domain:port or IP:port</string>
+    
+    <!-- Push Templates -->
+    <string name="title_push_templates">Push Notifications</string>
+    <string name="push_template_default">Default Notification</string>
+    <string name="push_template_urgent">Urgent Alert</string>
+    <string name="push_template_silent">Silent Push</string>
+    <string name="push_template_summary">Daily Summary</string>
+    <string name="push_template_hint">Select notification style for remote push</string>
+    
+    <!-- Sync -->
+    <string name="btn_sync_now">Sync Now</string>
+    <string name="label_last_sync">Last sync: %s</string>
+    <string name="label_auto_sync">Auto Sync</string>
+    <string name="auto_sync_hint">Sync automatically in the background</string>
+    <string name="label_wifi_only">Wi-Fi Only</string>
+    <string name="wifi_only_hint">Only sync when connected to Wi-Fi</string>
+    <string name="sync_success">Sync completed successfully</string>
+    <string name="sync_failed">Sync failed: %s</string>
+    
+    <!-- Appearance -->
+    <string name="label_theme">Theme</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    
+    <!-- Language -->
+    <string name="label_language">Language</string>
+    <string name="language_system">System Default</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">中文</string>
+    
+    <!-- About -->
+    <string name="about_version">Version %s</string>
+    
+    <!-- Timeline -->
+    <string name="timeline_now">NOW</string>
+    <string name="timeline_overdue">Overdue</string>
+    <string name="timeline_today">Today</string>
+    <string name="timeline_tomorrow">Tomorrow</string>
+    <string name="timeline_this_week">This Week</string>
+    <string name="timeline_later">Later</string>
+    
+    <!-- Days of Week -->
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="day_sun">Sun</string>
+    
+    <!-- Widget -->
+    <string name="widget_title">Life App</string>
+    <string name="widget_current_task">Current Task</string>
+    <string name="widget_no_tasks">No active tasks</string>
+    <string name="widget_tap_to_add">Tap to add a task</string>
+    <string name="widget_tasks_remaining">%d tasks remaining</string>
+    
+    <!-- General -->
+    <string name="loading">Loading...</string>
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="completed">Completed</string>
+    <string name="not_set">Not set</string>
 </resources>

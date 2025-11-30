@@ -19,7 +19,12 @@ data class SettingsUiState(
     val autoSyncEnabled: Boolean = false,
     val syncOnWifiOnly: Boolean = true,
     val serverUrl: String = "",
+    val serverPassword: String = "",
+    val clientToken: String = "",
     val pushTemplateId: String? = null,
+    val themeMode: String = SyncPreferences.THEME_SYSTEM,
+    val language: String = SyncPreferences.LANGUAGE_SYSTEM,
+    val customTags: List<String> = emptyList(),
     val isSyncing: Boolean = false,
     val isLoggingIn: Boolean = false,
     val errorMessage: String? = null,
@@ -52,7 +57,12 @@ class SettingsViewModel(
             autoSyncEnabled = syncPreferences.autoSyncEnabled,
             syncOnWifiOnly = syncPreferences.syncOnWifiOnly,
             serverUrl = syncPreferences.serverUrl,
-            pushTemplateId = syncPreferences.pushTemplateId
+            serverPassword = syncPreferences.serverPassword,
+            clientToken = syncPreferences.clientToken,
+            pushTemplateId = syncPreferences.pushTemplateId,
+            themeMode = syncPreferences.themeMode,
+            language = syncPreferences.language,
+            customTags = syncPreferences.getCustomTagList()
         )
     }
     
@@ -153,11 +163,51 @@ class SettingsViewModel(
     }
     
     /**
+     * Update server password
+     */
+    fun updateServerPassword(password: String) {
+        syncPreferences.serverPassword = password
+        _uiState.value = _uiState.value.copy(serverPassword = password)
+    }
+    
+    /**
      * Update push template
      */
     fun updatePushTemplate(templateId: String?) {
         syncPreferences.pushTemplateId = templateId
         _uiState.value = _uiState.value.copy(pushTemplateId = templateId)
+    }
+    
+    /**
+     * Update theme mode
+     */
+    fun updateThemeMode(mode: String) {
+        syncPreferences.themeMode = mode
+        _uiState.value = _uiState.value.copy(themeMode = mode)
+    }
+    
+    /**
+     * Update language
+     */
+    fun updateLanguage(language: String) {
+        syncPreferences.language = language
+        _uiState.value = _uiState.value.copy(language = language)
+    }
+    
+    /**
+     * Add custom tag
+     */
+    fun addCustomTag(tag: String) {
+        syncPreferences.addCustomTag(tag)
+        _uiState.value = _uiState.value.copy(customTags = syncPreferences.getCustomTagList())
+    }
+    
+    /**
+     * Remove custom tag
+     */
+    fun removeCustomTag(tag: String) {
+        syncPreferences.removeCustomTag(tag)
+        _uiState.value = _uiState.value.copy(customTags = syncPreferences.getCustomTagList())
     }
     
     /**

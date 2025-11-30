@@ -432,6 +432,8 @@ fun LifeAppMain() {
                     onPriorityChange = { viewModel.updatePriority(it) },
                     onProgressChange = { viewModel.updateProgress(it) },
                     onIsPublicChange = { viewModel.updateIsPublic(it) },
+                    onAddTag = { viewModel.addTag(it) },
+                    onRemoveTag = { viewModel.removeTag(it) },
                     onSave = { viewModel.saveTask() },
                     onNavigateBack = { navController.popBackStack() },
                     onErrorDismiss = { viewModel.clearError() }

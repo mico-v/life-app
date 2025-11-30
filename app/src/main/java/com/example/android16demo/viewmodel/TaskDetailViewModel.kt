@@ -21,6 +21,7 @@ data class TaskDetailUiState(
     val priority: Int = Task.PRIORITY_MEDIUM,
     val progress: Float = 0f,
     val isPublic: Boolean = false,
+    val tags: List<String> = emptyList(),
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val errorMessage: String? = null,
@@ -43,6 +44,11 @@ class TaskDetailViewModel(
     init {
         if (taskId != null) {
             loadTask(taskId)
+        } else {
+            // For new tasks, default start time to current time
+            _uiState.value = _uiState.value.copy(
+                startTime = System.currentTimeMillis()
+            )
         }
     }
     
@@ -64,6 +70,7 @@ class TaskDetailViewModel(
                         priority = task.priority,
                         progress = task.progress,
                         isPublic = task.isPublic,
+                        tags = task.getTagList(),
                         isLoading = false
                     )
                 } else {
@@ -134,6 +141,27 @@ class TaskDetailViewModel(
     }
     
     /**
+     * Add a tag
+     */
+    fun addTag(tag: String) {
+        val trimmedTag = tag.trim()
+        if (trimmedTag.isNotEmpty() && !_uiState.value.tags.contains(trimmedTag)) {
+            _uiState.value = _uiState.value.copy(
+                tags = _uiState.value.tags + trimmedTag
+            )
+        }
+    }
+    
+    /**
+     * Remove a tag
+     */
+    fun removeTag(tag: String) {
+        _uiState.value = _uiState.value.copy(
+            tags = _uiState.value.tags.filter { it != tag }
+        )
+    }
+    
+    /**
      * Validate form
      */
     private fun validateForm(): Boolean {
@@ -158,6 +186,7 @@ class TaskDetailViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val state = _uiState.value
+                val tagsString = if (state.tags.isEmpty()) null else state.tags.joinToString(",")
                 
                 val task = if (isEditMode && state.task != null) {
                     // Update existing task
@@ -168,7 +197,8 @@ class TaskDetailViewModel(
                         deadline = state.deadline,
                         priority = state.priority,
                         progress = state.progress,
-                        isPublic = state.isPublic
+                        isPublic = state.isPublic,
+                        tags = tagsString
                     )
                 } else {
                     // Create new task
@@ -179,7 +209,8 @@ class TaskDetailViewModel(
                         deadline = state.deadline,
                         priority = state.priority,
                         progress = state.progress,
-                        isPublic = state.isPublic
+                        isPublic = state.isPublic,
+                        tags = tagsString
                     )
                 }
                 

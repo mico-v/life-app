@@ -20,7 +20,8 @@ data class Task(
     val completedAt: Long? = null,    // When the task was completed
     val progress: Float = 0f,         // 0.0 - 1.0
     val priority: Int = 1,            // 1: Low, 2: Medium, 3: High
-    val isPublic: Boolean = false     // For server sync (Phase 3)
+    val isPublic: Boolean = false,    // For server sync (Phase 3)
+    val tags: String? = null          // Comma-separated tags
 ) {
     companion object {
         const val PRIORITY_LOW = 1
@@ -45,5 +46,19 @@ data class Task(
             PRIORITY_HIGH -> "High"
             else -> "Unknown"
         }
+    }
+    
+    /**
+     * Get list of tags
+     */
+    fun getTagList(): List<String> {
+        return tags?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+    }
+    
+    /**
+     * Check if task has a specific tag
+     */
+    fun hasTag(tag: String): Boolean {
+        return getTagList().any { it.equals(tag, ignoreCase = true) }
     }
 }

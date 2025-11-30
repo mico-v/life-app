@@ -70,7 +70,10 @@ fun SettingsScreen(
     onAutoSyncToggle: (Boolean) -> Unit,
     onWifiOnlyToggle: (Boolean) -> Unit,
     onServerUrlChange: (String) -> Unit,
+    onServerPasswordChange: (String) -> Unit = {},
     onPushTemplateChange: (String?) -> Unit,
+    onThemeModeChange: (String) -> Unit = {},
+    onLanguageChange: (String) -> Unit = {},
     onNavigateBack: () -> Unit,
     onErrorDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -85,6 +88,7 @@ fun SettingsScreen(
     // Server URL editing state
     var editingServerUrl by remember { mutableStateOf(false) }
     var serverUrlInput by remember { mutableStateOf(uiState.serverUrl) }
+    var serverPasswordInput by remember { mutableStateOf(uiState.serverPassword) }
     
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
@@ -103,6 +107,10 @@ fun SettingsScreen(
     // Update serverUrlInput when uiState changes
     LaunchedEffect(uiState.serverUrl) {
         serverUrlInput = uiState.serverUrl
+    }
+    
+    LaunchedEffect(uiState.serverPassword) {
+        serverPasswordInput = uiState.serverPassword
     }
     
     Scaffold(
@@ -171,12 +179,31 @@ fun SettingsScreen(
                     onStartEditing = { editingServerUrl = true },
                     onSaveServerUrl = {
                         onServerUrlChange(serverUrlInput)
+                        onServerPasswordChange(serverPasswordInput)
                         editingServerUrl = false
                     },
                     onCancelEditing = {
                         serverUrlInput = uiState.serverUrl
+                        serverPasswordInput = uiState.serverPassword
                         editingServerUrl = false
-                    }
+                    },
+                    serverPassword = serverPasswordInput,
+                    onServerPasswordChange = { serverPasswordInput = it },
+                    clientToken = uiState.clientToken
+                )
+            }
+            
+            // Appearance Section
+            item {
+                SettingsSectionHeader(title = "Appearance")
+            }
+            
+            item {
+                AppearanceCard(
+                    themeMode = uiState.themeMode,
+                    language = uiState.language,
+                    onThemeModeChange = onThemeModeChange,
+                    onLanguageChange = onLanguageChange
                 )
             }
             
@@ -234,8 +261,11 @@ private fun SettingsSectionHeader(title: String) {
 @Composable
 private fun ServerConfigCard(
     serverUrl: String,
+    serverPassword: String,
+    clientToken: String,
     isEditing: Boolean,
     onServerUrlChange: (String) -> Unit,
+    onServerPasswordChange: (String) -> Unit,
     onStartEditing: () -> Unit,
     onSaveServerUrl: () -> Unit,
     onCancelEditing: () -> Unit
@@ -273,7 +303,7 @@ private fun ServerConfigCard(
                         style = MaterialTheme.typography.titleSmall
                     )
                     Text(
-                        text = "Configure the server for push notifications",
+                        text = "Configure the server for data sync",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -281,6 +311,20 @@ private fun ServerConfigCard(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
+            
+            // Client Token display
+            Text(
+                text = "Client Token",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = clientToken.take(8) + "..." + clientToken.takeLast(4),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
             
             if (isEditing) {
                 OutlinedTextField(
@@ -294,6 +338,16 @@ private fun ServerConfigCard(
                     supportingText = if (!isValidUrl) {
                         { Text("Invalid format. Use domain:port or IP:port") }
                     } else null
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = serverPassword,
+                    onValueChange = onServerPasswordChange,
+                    label = { Text("Server Password") },
+                    placeholder = { Text("Enter server password") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
@@ -322,19 +376,116 @@ private fun ServerConfigCard(
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = if (serverUrl.isNotBlank()) serverUrl else "Not configured",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (serverUrl.isNotBlank()) 
-                            MaterialTheme.colorScheme.onSurface 
-                        else 
-                            MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (serverUrl.isNotBlank()) serverUrl else "Not configured",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (serverUrl.isNotBlank()) 
+                                MaterialTheme.colorScheme.onSurface 
+                            else 
+                                MaterialTheme.colorScheme.outline
+                        )
+                        if (serverPassword.isNotBlank()) {
+                            Text(
+                                text = "Password: ••••••",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                     Text(
                         text = "Edit",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppearanceCard(
+    themeMode: String,
+    language: String,
+    onThemeModeChange: (String) -> Unit,
+    onLanguageChange: (String) -> Unit
+) {
+    val themeOptions = listOf(
+        "system" to "System Default",
+        "light" to "Light",
+        "dark" to "Dark"
+    )
+    
+    val languageOptions = listOf(
+        "system" to "System Default",
+        "en" to "English",
+        "zh" to "中文"
+    )
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Theme Selection
+            Text(
+                text = "Theme",
+                style = MaterialTheme.typography.titleSmall
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            themeOptions.forEach { (value, label) ->
+                val isSelected = themeMode == value
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onThemeModeChange(value) }
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.RadioButton(
+                        selected = isSelected,
+                        onClick = { onThemeModeChange(value) }
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+            
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            
+            // Language Selection
+            Text(
+                text = "Language",
+                style = MaterialTheme.typography.titleSmall
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            languageOptions.forEach { (value, label) ->
+                val isSelected = language == value
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onLanguageChange(value) }
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.RadioButton(
+                        selected = isSelected,
+                        onClick = { onLanguageChange(value) }
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
             }
@@ -776,7 +927,11 @@ fun SettingsScreenPreview() {
                 lastSyncTime = System.currentTimeMillis(),
                 autoSyncEnabled = true,
                 serverUrl = "api.example.com:8080",
-                pushTemplateId = "default"
+                serverPassword = "secret123",
+                clientToken = "abc123def456ghi789",
+                pushTemplateId = "default",
+                themeMode = "system",
+                language = "en"
             ),
             onLogin = { _, _ -> },
             onLogout = {},
@@ -784,7 +939,10 @@ fun SettingsScreenPreview() {
             onAutoSyncToggle = {},
             onWifiOnlyToggle = {},
             onServerUrlChange = {},
+            onServerPasswordChange = {},
             onPushTemplateChange = {},
+            onThemeModeChange = {},
+            onLanguageChange = {},
             onNavigateBack = {},
             onErrorDismiss = {}
         )

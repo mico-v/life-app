@@ -4,16 +4,40 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#6650a4"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0"/>
+    
+    <!-- Stack layers representing tasks -->
+    <!-- Bottom layer -->
+    <path
+        android:fillColor="#D0BCFF"
+        android:pathData="M38,62h32v5h-32z"
+        android:fillAlpha="0.8"/>
+    
+    <!-- Middle layer -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,55h28v5h-28z"
+        android:fillAlpha="0.9"/>
+    
+    <!-- Top layer -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,48h24v5h-24z"/>
+    
+    <!-- Upward arrow (Push) on left -->
     <path
         android:fillColor="#3DDC84"
-        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0"/>
+        android:pathData="M34,52l-4,-6l4,-6l0,4l4,0l0,4l-4,0z"/>
+    
+    <!-- Checkmark on top layer indicating completion -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M43,45h22v3h-22z"/>
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M43,51h22v3h-22z"/>
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M43,57h22v3h-22z"/>
+        android:fillColor="#3DDC84"
+        android:strokeWidth="1.5"
+        android:strokeColor="#3DDC84"
+        android:pathData="M50,50l3,3l7,-7"
+        android:fillType="nonZero"/>
 </vector>

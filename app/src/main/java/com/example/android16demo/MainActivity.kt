@@ -376,7 +376,10 @@ fun LifeAppMain() {
                     onAutoSyncToggle = { viewModel.setAutoSync(it) },
                     onWifiOnlyToggle = { viewModel.setWifiOnly(it) },
                     onServerUrlChange = { viewModel.updateServerUrl(it) },
+                    onServerPasswordChange = { viewModel.updateServerPassword(it) },
                     onPushTemplateChange = { viewModel.updatePushTemplate(it) },
+                    onThemeModeChange = { viewModel.updateThemeMode(it) },
+                    onLanguageChange = { viewModel.updateLanguage(it) },
                     onNavigateBack = { navController.popBackStack() },
                     onErrorDismiss = { viewModel.clearMessages() }
                 )

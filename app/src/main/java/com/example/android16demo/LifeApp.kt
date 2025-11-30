@@ -4,6 +4,7 @@ import android.app.Application
 import com.example.android16demo.data.AppDatabase
 import com.example.android16demo.data.repository.TaskRepository
 import com.example.android16demo.data.repository.TemplateRepository
+import com.example.android16demo.data.sync.SyncPreferences
 
 /**
  * Application class for Life App.
@@ -21,5 +22,9 @@ class LifeApp : Application() {
     
     val templateRepository: TemplateRepository by lazy {
         TemplateRepository(database.taskTemplateDao())
+    }
+    
+    val syncPreferences: SyncPreferences by lazy {
+        SyncPreferences(this)
     }
 }

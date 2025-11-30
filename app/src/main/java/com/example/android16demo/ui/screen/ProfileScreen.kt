@@ -1,7 +1,10 @@
 package com.example.android16demo.ui.screen
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,19 +22,25 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Pending
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -40,14 +49,20 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,9 +71,10 @@ import com.example.android16demo.ui.theme.Android16DemoTheme
 import com.example.android16demo.viewmodel.DayStats
 import com.example.android16demo.viewmodel.ProfileUiState
 import com.example.android16demo.viewmodel.TaskStatistics
+import com.example.android16demo.viewmodel.UserProfile
 
 /**
- * Profile Screen with statistics and user information
+ * Profile Screen with statistics, user information, and customization
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +82,9 @@ fun ProfileScreenContent(
     uiState: ProfileUiState,
     onRefresh: () -> Unit,
     onSettingsClick: () -> Unit,
+    onUpdateDisplayName: (String) -> Unit,
+    onUpdateMotto: (String) -> Unit,
+    onUpdateStatus: (String) -> Unit,
     onErrorDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -122,14 +141,29 @@ fun ProfileScreenContent(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // User Info Card
+                // User Info Card with customization
                 item {
-                    UserInfoCard()
+                    UserInfoCard(
+                        userProfile = uiState.userProfile,
+                        onUpdateDisplayName = onUpdateDisplayName,
+                        onUpdateMotto = onUpdateMotto,
+                        onUpdateStatus = onUpdateStatus
+                    )
+                }
+                
+                // Status Card
+                item {
+                    StatusCard(status = uiState.userProfile.status)
                 }
                 
                 // Stats Overview
                 item {
                     StatsOverviewCard(statistics = uiState.statistics)
+                }
+                
+                // Achievement Progress
+                item {
+                    AchievementProgressCard(statistics = uiState.statistics)
                 }
                 
                 // Weekly Chart
@@ -141,53 +175,264 @@ fun ProfileScreenContent(
                 item {
                     CompletionRateCard(completionRate = uiState.statistics.completionRate)
                 }
+                
+                // All-time stats
+                item {
+                    AllTimeStatsCard(totalCompleted = uiState.statistics.totalCompletedAllTime)
+                }
             }
         }
     }
 }
 
 /**
- * User info card
+ * User info card with editable fields
  */
 @Composable
-private fun UserInfoCard(modifier: Modifier = Modifier) {
+private fun UserInfoCard(
+    userProfile: UserProfile,
+    onUpdateDisplayName: (String) -> Unit,
+    onUpdateMotto: (String) -> Unit,
+    onUpdateStatus: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isEditing by remember { mutableStateOf(false) }
+    var editName by remember { mutableStateOf(userProfile.displayName) }
+    var editMotto by remember { mutableStateOf(userProfile.motto) }
+    
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(44.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    if (isEditing) {
+                        OutlinedTextField(
+                            value = editName,
+                            onValueChange = { editName = it },
+                            label = { Text("Display Name") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Text(
+                            text = userProfile.displayName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                IconButton(onClick = { 
+                    if (isEditing) {
+                        onUpdateDisplayName(editName)
+                        onUpdateMotto(editMotto)
+                    }
+                    isEditing = !isEditing 
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = if (isEditing) "Save" else "Edit",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Motto
+            if (isEditing) {
+                OutlinedTextField(
+                    value = editMotto,
+                    onValueChange = { editMotto = it },
+                    label = { Text("Personal Motto") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "\"${userProfile.motto}\"",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(12.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            
+            if (isEditing) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    OutlinedButton(onClick = {
+                        editName = userProfile.displayName
+                        editMotto = userProfile.motto
+                        isEditing = false
+                    }) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        onUpdateDisplayName(editName)
+                        onUpdateMotto(editMotto)
+                        isEditing = false
+                    }) {
+                        Text("Save")
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Status card showing current user status
+ */
+@Composable
+private fun StatusCard(
+    status: String,
+    modifier: Modifier = Modifier
+) {
+    val statusColor = when (status.lowercase()) {
+        "busy" -> MaterialTheme.colorScheme.error
+        "available" -> MaterialTheme.colorScheme.primary
+        "away" -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.outline
+    }
+    
+    Card(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(64.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
-                contentAlignment = Alignment.Center
+                    .size(12.dp)
+                    .background(statusColor, CircleShape)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Status: ",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = status,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = statusColor
+            )
+        }
+    }
+}
+
+/**
+ * Achievement progress card
+ */
+@Composable
+private fun AchievementProgressCard(
+    statistics: TaskStatistics,
+    modifier: Modifier = Modifier
+) {
+    val achievements = listOf(
+        Triple("First Steps", 1, statistics.totalCompletedAllTime >= 1),
+        Triple("Getting Started", 10, statistics.totalCompletedAllTime >= 10),
+        Triple("Productive", 50, statistics.totalCompletedAllTime >= 50),
+        Triple("Master", 100, statistics.totalCompletedAllTime >= 100),
+        Triple("Legend", 500, statistics.totalCompletedAllTime >= 500)
+    )
+    
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Person,
+                    imageVector = Icons.Default.EmojiEvents,
                     contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = MaterialTheme.colorScheme.primary
                 )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Life App User",
-                    style = MaterialTheme.typography.titleLarge,
+                    text = "Achievements",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Text(
-                    text = "Push to Start, Pop to Finish",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            achievements.forEach { (name, target, achieved) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = if (achieved) Color(0xFFFFD700) else MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (achieved) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = "Complete $target tasks",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (achieved) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Achieved",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -331,6 +576,11 @@ private fun DayBar(
     modifier: Modifier = Modifier
 ) {
     val barHeight = if (maxValue > 0) (value.toFloat() / maxValue) * 80f else 0f
+    val animatedHeight by animateFloatAsState(
+        targetValue = barHeight,
+        animationSpec = tween(durationMillis = 500),
+        label = "bar_height"
+    )
     
     Column(
         modifier = modifier.padding(horizontal = 4.dp),
@@ -345,7 +595,7 @@ private fun DayBar(
         Box(
             modifier = Modifier
                 .width(24.dp)
-                .height(barHeight.dp.coerceAtLeast(4.dp))
+                .height(animatedHeight.dp.coerceAtLeast(4.dp))
                 .background(
                     MaterialTheme.colorScheme.primary,
                     RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
@@ -368,6 +618,12 @@ private fun CompletionRateCard(
     completionRate: Float,
     modifier: Modifier = Modifier
 ) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = completionRate / 100f,
+        animationSpec = tween(durationMillis = 1000),
+        label = "completion_rate"
+    )
+    
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -387,7 +643,7 @@ private fun CompletionRateCard(
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressCanvas(
-                    progress = completionRate / 100f,
+                    progress = animatedProgress,
                     modifier = Modifier.fillMaxSize()
                 )
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -404,6 +660,42 @@ private fun CompletionRateCard(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * All-time stats card
+ */
+@Composable
+private fun AllTimeStatsCard(
+    totalCompleted: Int,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "All-Time Tasks Completed",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = totalCompleted.toString(),
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "tasks popped",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -429,7 +721,7 @@ private fun CircularProgressCanvas(
             color = backgroundColor,
             radius = radius,
             center = center,
-            style = Stroke(width = strokeWidth)
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
         )
         
         // Progress arc
@@ -440,7 +732,7 @@ private fun CircularProgressCanvas(
             useCenter = false,
             topLeft = Offset(center.x - radius, center.y - radius),
             size = Size(radius * 2, radius * 2),
-            style = Stroke(width = strokeWidth)
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
         )
     }
 }
@@ -467,10 +759,18 @@ fun ProfileScreenPreview() {
                         DayStats("Sun", 2)
                     )
                 ),
+                userProfile = UserProfile(
+                    displayName = "John Doe",
+                    motto = "Stay productive, stay happy!",
+                    status = "Available"
+                ),
                 isLoading = false
             ),
             onRefresh = {},
             onSettingsClick = {},
+            onUpdateDisplayName = {},
+            onUpdateMotto = {},
+            onUpdateStatus = {},
             onErrorDismiss = {}
         )
     }

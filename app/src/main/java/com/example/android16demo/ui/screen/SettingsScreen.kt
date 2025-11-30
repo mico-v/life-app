@@ -17,7 +17,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
@@ -50,27 +52,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.android16demo.ui.theme.Android16DemoTheme
+import com.example.android16demo.viewmodel.SettingsUiState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Settings screen state
- */
-data class SettingsUiState(
-    val isLoggedIn: Boolean = false,
-    val username: String? = null,
-    val lastSyncTime: Long = 0,
-    val autoSyncEnabled: Boolean = false,
-    val syncOnWifiOnly: Boolean = true,
-    val isSyncing: Boolean = false,
-    val isLoggingIn: Boolean = false,
-    val errorMessage: String? = null,
-    val successMessage: String? = null
-)
-
-/**
- * Settings screen with sync configuration
+ * Settings screen with sync configuration, server settings, and push templates
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +69,8 @@ fun SettingsScreen(
     onSyncNow: () -> Unit,
     onAutoSyncToggle: (Boolean) -> Unit,
     onWifiOnlyToggle: (Boolean) -> Unit,
+    onServerUrlChange: (String) -> Unit,
+    onPushTemplateChange: (String?) -> Unit,
     onNavigateBack: () -> Unit,
     onErrorDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -91,6 +81,10 @@ fun SettingsScreen(
     var loginUsername by remember { mutableStateOf("") }
     var loginPassword by remember { mutableStateOf("") }
     var showLoginForm by remember { mutableStateOf(false) }
+    
+    // Server URL editing state
+    var editingServerUrl by remember { mutableStateOf(false) }
+    var serverUrlInput by remember { mutableStateOf(uiState.serverUrl) }
     
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
@@ -104,6 +98,11 @@ fun SettingsScreen(
             snackbarHostState.showSnackbar(message)
             onErrorDismiss()
         }
+    }
+    
+    // Update serverUrlInput when uiState changes
+    LaunchedEffect(uiState.serverUrl) {
+        serverUrlInput = uiState.serverUrl
     }
     
     Scaffold(
@@ -159,6 +158,40 @@ fun SettingsScreen(
                 )
             }
             
+            // Server Section
+            item {
+                SettingsSectionHeader(title = "Server Configuration")
+            }
+            
+            item {
+                ServerConfigCard(
+                    serverUrl = serverUrlInput,
+                    isEditing = editingServerUrl,
+                    onServerUrlChange = { serverUrlInput = it },
+                    onStartEditing = { editingServerUrl = true },
+                    onSaveServerUrl = {
+                        onServerUrlChange(serverUrlInput)
+                        editingServerUrl = false
+                    },
+                    onCancelEditing = {
+                        serverUrlInput = uiState.serverUrl
+                        editingServerUrl = false
+                    }
+                )
+            }
+            
+            // Push Templates Section
+            item {
+                SettingsSectionHeader(title = "Push Notifications")
+            }
+            
+            item {
+                PushTemplateCard(
+                    currentTemplateId = uiState.pushTemplateId,
+                    onTemplateChange = onPushTemplateChange
+                )
+            }
+            
             // Sync Section
             item {
                 SettingsSectionHeader(title = "Sync")
@@ -196,6 +229,184 @@ private fun SettingsSectionHeader(title: String) {
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary
     )
+}
+
+@Composable
+private fun ServerConfigCard(
+    serverUrl: String,
+    isEditing: Boolean,
+    onServerUrlChange: (String) -> Unit,
+    onStartEditing: () -> Unit,
+    onSaveServerUrl: () -> Unit,
+    onCancelEditing: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Dns,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = "Remote Server",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = "Configure the server for push notifications",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            if (isEditing) {
+                OutlinedTextField(
+                    value = serverUrl,
+                    onValueChange = onServerUrlChange,
+                    label = { Text("Server URL (domain:port or IP:port)") },
+                    placeholder = { Text("example.com:8080 or 192.168.1.100:8080") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onCancelEditing,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        onClick = onSaveServerUrl,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Save")
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onStartEditing() }
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (serverUrl.isNotBlank()) serverUrl else "Not configured",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (serverUrl.isNotBlank()) 
+                            MaterialTheme.colorScheme.onSurface 
+                        else 
+                            MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "Edit",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PushTemplateCard(
+    currentTemplateId: String?,
+    onTemplateChange: (String?) -> Unit
+) {
+    val templates = listOf(
+        "default" to "Default Notification",
+        "urgent" to "Urgent Alert",
+        "silent" to "Silent Push",
+        "summary" to "Daily Summary"
+    )
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.NotificationsActive,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = "Push Template",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = "Select notification style for remote push",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            templates.forEach { (id, name) ->
+                val isSelected = currentTemplateId == id || (currentTemplateId == null && id == "default")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onTemplateChange(id) }
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.RadioButton(
+                        selected = isSelected,
+                        onClick = { onTemplateChange(id) }
+                    )
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -521,13 +732,17 @@ fun SettingsScreenPreview() {
                 isLoggedIn = true,
                 username = "testuser",
                 lastSyncTime = System.currentTimeMillis(),
-                autoSyncEnabled = true
+                autoSyncEnabled = true,
+                serverUrl = "api.example.com:8080",
+                pushTemplateId = "default"
             ),
             onLogin = { _, _ -> },
             onLogout = {},
             onSyncNow = {},
             onAutoSyncToggle = {},
             onWifiOnlyToggle = {},
+            onServerUrlChange = {},
+            onPushTemplateChange = {},
             onNavigateBack = {},
             onErrorDismiss = {}
         )

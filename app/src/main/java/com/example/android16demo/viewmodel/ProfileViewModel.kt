@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android16demo.data.entity.Task
 import com.example.android16demo.data.repository.TaskRepository
+import com.example.android16demo.data.sync.SyncPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,10 +30,20 @@ data class DayStats(
 )
 
 /**
+ * User profile data
+ */
+data class UserProfile(
+    val displayName: String = "Life App User",
+    val motto: String = "Push to Start, Pop to Finish",
+    val status: String = "Available"
+)
+
+/**
  * UI State for Profile/Statistics screen
  */
 data class ProfileUiState(
     val statistics: TaskStatistics = TaskStatistics(),
+    val userProfile: UserProfile = UserProfile(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -40,13 +51,59 @@ data class ProfileUiState(
 /**
  * ViewModel for Profile/Statistics screen
  */
-class ProfileViewModel(private val repository: TaskRepository) : ViewModel() {
+class ProfileViewModel(
+    private val repository: TaskRepository,
+    private val syncPreferences: SyncPreferences? = null
+) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
     
     init {
+        loadUserProfile()
         loadStatistics()
+    }
+    
+    /**
+     * Load user profile from preferences
+     */
+    private fun loadUserProfile() {
+        val profile = UserProfile(
+            displayName = syncPreferences?.userDisplayName ?: "Life App User",
+            motto = syncPreferences?.userMotto ?: "Push to Start, Pop to Finish",
+            status = syncPreferences?.userStatus ?: "Available"
+        )
+        _uiState.value = _uiState.value.copy(userProfile = profile)
+    }
+    
+    /**
+     * Update display name
+     */
+    fun updateDisplayName(name: String) {
+        syncPreferences?.userDisplayName = name
+        _uiState.value = _uiState.value.copy(
+            userProfile = _uiState.value.userProfile.copy(displayName = name)
+        )
+    }
+    
+    /**
+     * Update motto
+     */
+    fun updateMotto(motto: String) {
+        syncPreferences?.userMotto = motto
+        _uiState.value = _uiState.value.copy(
+            userProfile = _uiState.value.userProfile.copy(motto = motto)
+        )
+    }
+    
+    /**
+     * Update status
+     */
+    fun updateStatus(status: String) {
+        syncPreferences?.userStatus = status
+        _uiState.value = _uiState.value.copy(
+            userProfile = _uiState.value.userProfile.copy(status = status)
+        )
     }
     
     /**
@@ -160,6 +217,7 @@ class ProfileViewModel(private val repository: TaskRepository) : ViewModel() {
      * Refresh statistics
      */
     fun refresh() {
+        loadUserProfile()
         loadStatistics()
     }
     

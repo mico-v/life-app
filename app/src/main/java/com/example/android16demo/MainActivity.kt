@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,10 +31,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -48,12 +49,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.android16demo.ui.screen.ArchiveScreen
+import com.example.android16demo.ui.screen.ProfileScreenContent
+import com.example.android16demo.ui.screen.SettingsScreen
 import com.example.android16demo.ui.screen.TaskDetailScreen
 import com.example.android16demo.ui.screen.TaskQueueScreen
 import com.example.android16demo.ui.screen.TimelineScreen
 import com.example.android16demo.ui.theme.Android16DemoTheme
 import com.example.android16demo.viewmodel.ArchiveViewModel
 import com.example.android16demo.viewmodel.HomeViewModel
+import com.example.android16demo.viewmodel.ProfileViewModel
+import com.example.android16demo.viewmodel.SettingsViewModel
 import com.example.android16demo.viewmodel.TaskDetailViewModel
 import com.example.android16demo.viewmodel.ViewModelFactory
 import com.example.android16demo.worker.DailySummaryWorker
@@ -81,6 +86,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     data object Queue : Screen("queue", "Queue", Icons.Filled.FormatListBulleted)
     data object Archive : Screen("archive", "Archive", Icons.Filled.Archive)
     data object Profile : Screen("profile", "Profile", Icons.Filled.Person)
+    data object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
     data object TaskDetail : Screen("task/{taskId}", "Task") {
         fun createRoute(taskId: String?) = if (taskId != null) "task/$taskId" else "task/new"
     }
@@ -95,6 +101,9 @@ enum class ViewMode {
     LIST,
     TIMELINE
 }
+
+// Animation duration constant
+private const val ANIMATION_DURATION = 300
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -183,10 +192,46 @@ fun LifeAppMain() {
         NavHost(
             navController = navController,
             startDestination = Screen.Queue.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                fadeIn(animationSpec = tween(ANIMATION_DURATION)) +
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(ANIMATION_DURATION)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(ANIMATION_DURATION)) +
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(ANIMATION_DURATION)
+                )
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(ANIMATION_DURATION)) +
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(ANIMATION_DURATION)
+                )
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(ANIMATION_DURATION)) +
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(ANIMATION_DURATION)
+                )
+            }
         ) {
             // Queue (Home) Screen - supports list and timeline views
-            composable(Screen.Queue.route) {
+            composable(
+                route = Screen.Queue.route,
+                enterTransition = {
+                    fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                exitTransition = {
+                    fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                }
+            ) {
                 val viewModel: HomeViewModel = viewModel(
                     factory = ViewModelFactory(app.taskRepository)
                 )
@@ -233,7 +278,15 @@ fun LifeAppMain() {
             }
             
             // Archive Screen
-            composable(Screen.Archive.route) {
+            composable(
+                route = Screen.Archive.route,
+                enterTransition = {
+                    fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                exitTransition = {
+                    fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                }
+            ) {
                 val viewModel: ArchiveViewModel = viewModel(
                     factory = ViewModelFactory(app.taskRepository)
                 )
@@ -249,9 +302,84 @@ fun LifeAppMain() {
                 )
             }
             
-            // Profile Screen (placeholder for Phase 4)
-            composable(Screen.Profile.route) {
-                ProfileScreen()
+            // Profile Screen
+            composable(
+                route = Screen.Profile.route,
+                enterTransition = {
+                    fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                exitTransition = {
+                    fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                }
+            ) {
+                val viewModel: ProfileViewModel = viewModel(
+                    factory = ViewModelFactory(
+                        repository = app.taskRepository,
+                        syncPreferences = app.syncPreferences
+                    )
+                )
+                val uiState by viewModel.uiState.collectAsState()
+                
+                ProfileScreenContent(
+                    uiState = uiState,
+                    onRefresh = { viewModel.refresh() },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                    onUpdateDisplayName = { viewModel.updateDisplayName(it) },
+                    onUpdateMotto = { viewModel.updateMotto(it) },
+                    onUpdateStatus = { viewModel.updateStatus(it) },
+                    onErrorDismiss = { viewModel.clearError() }
+                )
+            }
+            
+            // Settings Screen
+            composable(
+                route = Screen.Settings.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                }
+            ) {
+                val viewModel: SettingsViewModel = viewModel(
+                    factory = ViewModelFactory(
+                        repository = app.taskRepository,
+                        syncPreferences = app.syncPreferences,
+                        templateRepository = app.templateRepository
+                    )
+                )
+                val uiState by viewModel.uiState.collectAsState()
+                
+                SettingsScreen(
+                    uiState = uiState,
+                    onLogin = { username, password -> viewModel.login(username, password) },
+                    onLogout = { viewModel.logout() },
+                    onSyncNow = { viewModel.syncNow() },
+                    onAutoSyncToggle = { viewModel.setAutoSync(it) },
+                    onWifiOnlyToggle = { viewModel.setWifiOnly(it) },
+                    onServerUrlChange = { viewModel.updateServerUrl(it) },
+                    onPushTemplateChange = { viewModel.updatePushTemplate(it) },
+                    onNavigateBack = { navController.popBackStack() },
+                    onErrorDismiss = { viewModel.clearMessages() }
+                )
             }
             
             // Task Detail Screen (Create/Edit)
@@ -262,7 +390,31 @@ fun LifeAppMain() {
                         type = NavType.StringType
                         nullable = true
                     }
-                )
+                ),
+                enterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Down,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Down,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                }
             ) { backStackEntry ->
                 val taskId = backStackEntry.arguments?.getString("taskId")?.takeIf { it != "new" }
                 val viewModel: TaskDetailViewModel = viewModel(
@@ -285,39 +437,6 @@ fun LifeAppMain() {
                     onErrorDismiss = { viewModel.clearError() }
                 )
             }
-        }
-    }
-}
-
-/**
- * Profile Screen placeholder
- */
-@Composable
-fun ProfileScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Person,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(64.dp)
-                    .padding(bottom = 16.dp),
-                tint = MaterialTheme.colorScheme.outline
-            )
-            Text(
-                text = "Profile",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Text(
-                text = "Coming in Phase 4",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

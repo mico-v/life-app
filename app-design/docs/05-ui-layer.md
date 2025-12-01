@@ -204,7 +204,7 @@ fun TaskCard(task: Task, onClick: () -> Unit) {
 }
 ```
 
-### TimelineView.kt
+### TimelineView.kt (原有垂直时间轴)
 
 **路径:** `ui/components/TimelineView.kt`
 
@@ -235,67 +235,96 @@ private fun groupTasksByTimeSection(tasks: List<Task>): Map<TimeSection, List<Ta
 }
 ```
 
-#### 时间轴布局
+### GanttTimelineView.kt (新版甘特图时间轴)
+
+**路径:** `ui/components/GanttTimelineView.kt`
+
+甘特图风格的时间轴视图，以水平方式显示任务在时间轴上的分布。
+
+#### 核心特性
+
+- **水平滚动时间轴**: 默认位置居中在当前时间
+- **向左滑动**: 查看逾期/已过期任务
+- **向右滑动**: 查看未来任务
+- **任务条形图**: 任务以彩色横条显示，宽度表示持续时间
+- **优先级颜色**: 高优先级=红色，中优先级=主题色，低优先级=次要色
+- **当前时间线**: 红色垂直线标记当前时间
 
 ```kotlin
 @Composable
-fun TimelineView(
+fun SimpleGanttView(
     tasks: List<Task>,
     onTaskClick: (String) -> Unit,
     onTaskComplete: (String) -> Unit,
-    onTaskDelete: (String) -> Unit
+    onTaskDelete: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val groupedTasks = groupTasksByTimeSection(tasks)
+    val scrollState = rememberScrollState()
+    val hourWidthDp = 60.dp
+    val totalHours = 168 // 7 天
+    val daysBeforeNow = 3
     
-    LazyColumn {
-        groupedTasks.forEach { (section, sectionTasks) ->
-            // 分组标题
-            item {
-                TimelineSectionHeader(section)
-            }
-            
-            // 任务列表（带时间轴线）
-            itemsIndexed(sectionTasks) { index, task ->
-                TimelineTaskItem(
-                    task = task,
-                    isLast = index == sectionTasks.lastIndex,
-                    onClick = { onTaskClick(task.id) },
-                    onComplete = { onTaskComplete(task.id) },
-                    onDelete = { onTaskDelete(task.id) }
-                )
+    // 初始化时居中到当前时间
+    LaunchedEffect(Unit) {
+        val hoursFromStart = daysBeforeNow * 24
+        scrollState.scrollTo((hoursFromStart * hourWidthPx - 200).toInt())
+    }
+    
+    Column(modifier = modifier.fillMaxSize()) {
+        // 时间头部
+        CompactTimeHeader(...)
+        
+        // 任务列表
+        LazyColumn {
+            items(tasks) { task ->
+                Row {
+                    // 任务信息列
+                    TaskInfoColumn(task = task)
+                    
+                    // 甘特图条形
+                    GanttTaskBar(
+                        task = task,
+                        hourWidthDp = hourWidthDp,
+                        daysBeforeNow = daysBeforeNow,
+                        onClick = { onTaskClick(task.id) }
+                    )
+                }
             }
         }
     }
 }
 ```
 
-#### 时间轴任务项
+#### 任务条形图
 
 ```kotlin
 @Composable
-private fun TimelineTaskItem(
+private fun GanttTaskBar(
     task: Task,
-    isLast: Boolean,
-    onClick: () -> Unit,
-    onComplete: () -> Unit,
-    onDelete: () -> Unit
+    hourWidthDp: Dp,
+    daysBeforeNow: Int,
+    onClick: () -> Unit
 ) {
-    Row {
-        // 时间轴线和圆点
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(/* 圆点 */)
-            if (!isLast) {
-                Box(/* 连接线 */)
-            }
-        }
-        
-        // 任务卡片
-        TaskItem(
-            task = task,
-            onComplete = onComplete,
-            onDelete = onDelete,
-            onClick = onClick
-        )
+    // 计算任务位置和宽度
+    val startOffsetHours = ((taskStart - startTime) / (3600 * 1000f))
+    val durationHours = ((taskEnd - taskStart) / (3600 * 1000f))
+    
+    // 根据优先级和状态确定颜色
+    val taskColor = when {
+        isOverdue -> MaterialTheme.colorScheme.error
+        task.priority == Task.PRIORITY_HIGH -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.primary
+    }
+    
+    // 绘制任务条
+    Card(
+        modifier = Modifier
+            .padding(start = hourWidthDp * startOffsetHours)
+            .width(hourWidthDp * durationHours)
+            .height(48.dp),
+        colors = CardDefaults.cardColors(containerColor = taskColor)
+    ) {
+        // 任务标题、进度等
     }
 }
 ```
@@ -750,10 +779,130 @@ LaunchedEffect(uiState.isSaved) {
 
 ---
 
+## 统一顶部状态栏
+
+### 设计理念
+
+所有界面的标题统一显示在应用顶部的 `CenterAlignedTopAppBar` 中，各子页面通过 `showTopBar = false` 参数隐藏自己的 TopAppBar。
+
+### MainActivity 统一管理
+
+```kotlin
+@Composable
+fun LifeAppMain(
+    onThemeChanged: (String) -> Unit = {},
+    onLanguageChanged: () -> Unit = {}
+) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(currentTitle) },  // 根据当前页面动态显示
+                navigationIcon = {
+                    if (showBackButton) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+                        }
+                    }
+                },
+                actions = {
+                    // 根据当前页面显示不同操作按钮
+                    if (isQueueScreen) { /* 视图切换按钮 */ }
+                    if (isProfileScreen) { /* 刷新和设置按钮 */ }
+                }
+            )
+        }
+    ) { ... }
+}
+```
+
+### 页面滑动动画
+
+页面切换使用水平滑动动画 (Page Swiping Transition)：
+
+```kotlin
+NavHost(
+    enterTransition = {
+        slideIntoContainer(
+            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+            animationSpec = tween(300)
+        ) + fadeIn()
+    },
+    exitTransition = {
+        slideOutOfContainer(
+            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+            animationSpec = tween(300)
+        ) + fadeOut()
+    },
+    popEnterTransition = {
+        slideIntoContainer(
+            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+            animationSpec = tween(300)
+        ) + fadeIn()
+    },
+    popExitTransition = {
+        slideOutOfContainer(
+            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+            animationSpec = tween(300)
+        ) + fadeOut()
+    }
+)
+```
+
+---
+
+## 多语言支持
+
+### LocaleHelper 工具类
+
+**路径:** `util/LocaleHelper.kt`
+
+```kotlin
+object LocaleHelper {
+    fun applyLanguage(context: Context, languageCode: String): Context {
+        val locale = when (languageCode) {
+            SyncPreferences.LANGUAGE_CHINESE -> Locale.SIMPLIFIED_CHINESE
+            SyncPreferences.LANGUAGE_ENGLISH -> Locale.ENGLISH
+            else -> Locale.getDefault()
+        }
+        return updateResources(context, locale)
+    }
+}
+```
+
+### Activity 应用语言
+
+```kotlin
+class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context?) {
+        if (newBase != null) {
+            val app = newBase.applicationContext as? LifeApp
+            val languageCode = app?.syncPreferences?.language ?: "system"
+            val context = LocaleHelper.applyLanguage(newBase, languageCode)
+            super.attachBaseContext(context)
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+}
+```
+
+### 语言切换触发重建
+
+```kotlin
+onLanguageChange = { language ->
+    settingsViewModel.updateLanguage(language)
+    onLanguageChanged()  // 触发 Activity.recreate()
+}
+```
+
+---
+
 ## 相关文件
 
 - `ui/theme/Theme.kt`, `Color.kt`, `Type.kt` - 主题
 - `ui/components/TaskItem.kt` - 任务卡片
-- `ui/components/TimelineView.kt` - 时间轴
+- `ui/components/TimelineView.kt` - 垂直时间轴
+- `ui/components/GanttTimelineView.kt` - 甘特图时间轴
 - `ui/components/TemplateSelector.kt` - 模板选择器
 - `ui/screen/*.kt` - 各页面
+- `util/LocaleHelper.kt` - 语言切换工具

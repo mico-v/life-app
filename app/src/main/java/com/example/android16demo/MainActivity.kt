@@ -1,5 +1,6 @@
 package com.example.android16demo
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -60,6 +61,7 @@ import com.example.android16demo.ui.screen.TaskDetailScreen
 import com.example.android16demo.ui.screen.TaskQueueScreen
 import com.example.android16demo.ui.screen.TimelineScreen
 import com.example.android16demo.ui.theme.Android16DemoTheme
+import com.example.android16demo.util.LocaleHelper
 import com.example.android16demo.viewmodel.ArchiveViewModel
 import com.example.android16demo.viewmodel.HomeViewModel
 import com.example.android16demo.viewmodel.ProfileViewModel
@@ -69,6 +71,18 @@ import com.example.android16demo.viewmodel.ViewModelFactory
 import com.example.android16demo.worker.DailySummaryWorker
 
 class MainActivity : ComponentActivity() {
+    
+    override fun attachBaseContext(newBase: Context?) {
+        if (newBase != null) {
+            val app = newBase.applicationContext as? LifeApp
+            val languageCode = app?.syncPreferences?.language ?: "system"
+            val context = LocaleHelper.applyLanguage(newBase, languageCode)
+            super.attachBaseContext(context)
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -85,6 +99,10 @@ class MainActivity : ComponentActivity() {
                 LifeAppMain(
                     onThemeChanged = { newMode ->
                         themeMode = newMode
+                    },
+                    onLanguageChanged = {
+                        // Recreate activity to apply new language
+                        recreate()
                     }
                 )
             }
@@ -121,7 +139,8 @@ private const val ANIMATION_DURATION = 300
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LifeAppMain(
-    onThemeChanged: (String) -> Unit = {}
+    onThemeChanged: (String) -> Unit = {},
+    onLanguageChanged: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -507,7 +526,10 @@ fun LifeAppMain(
                         settingsViewModel.updateThemeMode(mode)
                         onThemeChanged(mode)
                     },
-                    onLanguageChange = { settingsViewModel.updateLanguage(it) },
+                    onLanguageChange = { language ->
+                        settingsViewModel.updateLanguage(language)
+                        onLanguageChanged()
+                    },
                     onNavigateBack = { navController.popBackStack() },
                     onErrorDismiss = { settingsViewModel.clearMessages() },
                     showTopBar = false

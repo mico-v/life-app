@@ -48,8 +48,6 @@ object LocaleHelper {
             configuration.locale = locale
         }
         
-        configuration.setLocale(locale)
-        
         return context.createConfigurationContext(configuration)
     }
 }

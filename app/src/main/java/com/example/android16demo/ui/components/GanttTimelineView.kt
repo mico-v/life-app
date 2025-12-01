@@ -317,7 +317,7 @@ private fun GanttTaskBar(
     
     val taskColor = when {
         isOverdue -> MaterialTheme.colorScheme.error
-        task.priority == Task.PRIORITY_HIGH -> MaterialTheme.colorScheme.tertiary
+        task.priority == Task.PRIORITY_HIGH -> MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
         task.priority == Task.PRIORITY_MEDIUM -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.secondary
     }
@@ -543,7 +543,7 @@ private fun TaskInfoColumn(
     val isOverdue = task.isOverdue()
     val priorityColor = when (task.priority) {
         Task.PRIORITY_HIGH -> MaterialTheme.colorScheme.error
-        Task.PRIORITY_MEDIUM -> MaterialTheme.colorScheme.tertiary
+        Task.PRIORITY_MEDIUM -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.outline
     }
     

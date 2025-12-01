@@ -28,7 +28,8 @@ data class SettingsUiState(
     val isSyncing: Boolean = false,
     val isLoggingIn: Boolean = false,
     val errorMessage: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val isSyncConfigured: Boolean = false
 )
 
 /**
@@ -62,7 +63,8 @@ class SettingsViewModel(
             pushTemplateId = syncPreferences.pushTemplateId,
             themeMode = syncPreferences.themeMode,
             language = syncPreferences.language,
-            customTags = syncPreferences.getCustomTagList()
+            customTags = syncPreferences.getCustomTagList(),
+            isSyncConfigured = syncPreferences.isSyncConfigured
         )
     }
     

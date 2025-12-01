@@ -9,27 +9,22 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timeline
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,12 +34,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -136,14 +128,12 @@ enum class ViewMode {
 // Animation duration constant
 private const val ANIMATION_DURATION = 300
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LifeAppMain(
     onThemeChanged: (String) -> Unit = {},
     onLanguageChanged: () -> Unit = {}
 ) {
     val navController = rememberNavController()
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     
@@ -158,101 +148,8 @@ fun LifeAppMain(
         currentDestination?.hierarchy?.any { it.route == screen.route } == true
     }
     
-    // Check if on Queue screen (to show view toggle)
-    val isQueueScreen = currentDestination?.hierarchy?.any { it.route == Screen.Queue.route } == true
-    
-    // Check if on Profile screen (to show settings and refresh buttons)
-    val isProfileScreen = currentDestination?.hierarchy?.any { it.route == Screen.Profile.route } == true
-    
-    // Get current screen title
-    val currentTitle = when {
-        currentDestination?.route == Screen.Queue.route -> stringResource(R.string.nav_queue)
-        currentDestination?.route == Screen.Archive.route -> stringResource(R.string.nav_archive)
-        currentDestination?.route == Screen.Profile.route -> stringResource(R.string.nav_profile)
-        currentDestination?.route == Screen.Settings.route -> stringResource(R.string.nav_settings)
-        currentDestination?.route == Screen.TaskDetail.route -> {
-            val taskId = navBackStackEntry?.arguments?.getString("taskId")?.takeIf { it != "new" }
-            if (taskId != null) stringResource(R.string.title_edit_task) else stringResource(R.string.title_push_new_task)
-        }
-        else -> stringResource(R.string.app_name)
-    }
-    
-    // Show back button for settings and task detail screens
-    val showBackButton = currentDestination?.route == Screen.Settings.route ||
-        currentDestination?.route == Screen.TaskDetail.route
-    
-    // Profile ViewModel for refresh action
-    val profileViewModel: ProfileViewModel? = if (isProfileScreen) {
-        viewModel(
-            factory = ViewModelFactory(
-                repository = app.taskRepository,
-                syncPreferences = app.syncPreferences
-            )
-        )
-    } else null
-    
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = currentTitle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                navigationIcon = {
-                    if (showBackButton) {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.btn_back)
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    if (isQueueScreen) {
-                        IconButton(
-                            onClick = {
-                                viewMode = if (viewMode == ViewMode.LIST) ViewMode.TIMELINE else ViewMode.LIST
-                            }
-                        ) {
-                            Icon(
-                                imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.Timeline else Icons.AutoMirrored.Filled.FormatListBulleted,
-                                contentDescription = if (viewMode == ViewMode.LIST) 
-                                    stringResource(R.string.view_timeline) 
-                                else 
-                                    stringResource(R.string.view_list),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                    if (isProfileScreen) {
-                        IconButton(onClick = { profileViewModel?.refresh() }) {
-                            Icon(
-                                imageVector = Icons.Filled.Refresh,
-                                contentDescription = stringResource(R.string.btn_refresh)
-                            )
-                        }
-                        IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
-                            Icon(
-                                imageVector = Icons.Filled.Settings,
-                                contentDescription = stringResource(R.string.nav_settings)
-                            )
-                        }
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        },
+        modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomNav) {
                 NavigationBar {
@@ -358,6 +255,7 @@ fun LifeAppMain(
                             onAddTask = {
                                 navController.navigate(Screen.TaskDetail.createRoute(null))
                             },
+                            onToggleView = { viewMode = ViewMode.TIMELINE },
                             onErrorDismiss = { homeViewModel.clearError() }
                         )
                     }
@@ -376,6 +274,7 @@ fun LifeAppMain(
                             onAddTask = {
                                 navController.navigate(Screen.TaskDetail.createRoute(null))
                             },
+                            onToggleView = { viewMode = ViewMode.LIST },
                             onErrorDismiss = { homeViewModel.clearError() }
                         )
                     }
@@ -423,8 +322,7 @@ fun LifeAppMain(
                     onClearAll = { archiveViewModel.clearAllArchived() },
                     onSearchQueryChange = { archiveViewModel.updateSearchQuery(it) },
                     onTagFilterChange = { archiveViewModel.updateSelectedTag(it) },
-                    onErrorDismiss = { archiveViewModel.clearError() },
-                    showTopBar = false
+                    onErrorDismiss = { archiveViewModel.clearError() }
                 )
             }
             
@@ -471,8 +369,7 @@ fun LifeAppMain(
                     onUpdateDisplayName = { viewModel.updateDisplayName(it) },
                     onUpdateMotto = { viewModel.updateMotto(it) },
                     onUpdateStatus = { viewModel.updateStatus(it) },
-                    onErrorDismiss = { viewModel.clearError() },
-                    showTopBar = false
+                    onErrorDismiss = { viewModel.clearError() }
                 )
             }
             
@@ -532,8 +429,7 @@ fun LifeAppMain(
                         onLanguageChanged()
                     },
                     onNavigateBack = { navController.popBackStack() },
-                    onErrorDismiss = { settingsViewModel.clearMessages() },
-                    showTopBar = false
+                    onErrorDismiss = { settingsViewModel.clearMessages() }
                 )
             }
             
@@ -591,8 +487,7 @@ fun LifeAppMain(
                     onRemoveTag = { taskDetailViewModel.removeTag(it) },
                     onSave = { taskDetailViewModel.saveTask() },
                     onNavigateBack = { navController.popBackStack() },
-                    onErrorDismiss = { taskDetailViewModel.clearError() },
-                    showTopBar = false
+                    onErrorDismiss = { taskDetailViewModel.clearError() }
                 )
             }
         }

@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,7 +37,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -45,8 +47,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -78,7 +78,6 @@ import com.example.android16demo.viewmodel.UserProfile
 /**
  * Profile Screen with statistics, user information, and customization
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreenContent(
     uiState: ProfileUiState,
@@ -88,8 +87,7 @@ fun ProfileScreenContent(
     onUpdateMotto: (String) -> Unit,
     onUpdateStatus: (String) -> Unit,
     onErrorDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-    showTopBar: Boolean = true
+    modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -102,88 +100,99 @@ fun ProfileScreenContent(
     
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            if (showTopBar) {
-                TopAppBar(
-                    title = { Text(stringResource(R.string.title_profile)) },
-                    actions = {
-                        IconButton(onClick = onRefresh) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = stringResource(R.string.btn_refresh)
-                            )
-                        }
-                        IconButton(onClick = onSettingsClick) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = stringResource(R.string.nav_settings)
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                )
-            }
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        if (uiState.isLoading) {
-            Box(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            // Header with status bar padding
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                CircularProgressIndicator()
+                Text(
+                    text = stringResource(R.string.title_profile),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Row {
+                    IconButton(onClick = onRefresh) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = stringResource(R.string.btn_refresh),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.nav_settings),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // User Info Card with customization
-                item {
-                    UserInfoCard(
-                        userProfile = uiState.userProfile,
-                        onUpdateDisplayName = onUpdateDisplayName,
-                        onUpdateMotto = onUpdateMotto,
-                        onUpdateStatus = onUpdateStatus
-                    )
+            
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-                
-                // Status Card
-                item {
-                    StatusCard(status = uiState.userProfile.status)
-                }
-                
-                // Stats Overview
-                item {
-                    StatsOverviewCard(statistics = uiState.statistics)
-                }
-                
-                // Achievement Progress
-                item {
-                    AchievementProgressCard(statistics = uiState.statistics)
-                }
-                
-                // Weekly Chart
-                item {
-                    WeeklyChartCard(weeklyData = uiState.statistics.weeklyData)
-                }
-                
-                // Completion Rate
-                item {
-                    CompletionRateCard(completionRate = uiState.statistics.completionRate)
-                }
-                
-                // All-time stats
-                item {
-                    AllTimeStatsCard(totalCompleted = uiState.statistics.totalCompletedAllTime)
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // User Info Card with customization
+                    item {
+                        UserInfoCard(
+                            userProfile = uiState.userProfile,
+                            onUpdateDisplayName = onUpdateDisplayName,
+                            onUpdateMotto = onUpdateMotto,
+                            onUpdateStatus = onUpdateStatus
+                        )
+                    }
+                    
+                    // Status Card
+                    item {
+                        StatusCard(status = uiState.userProfile.status)
+                    }
+                    
+                    // Stats Overview
+                    item {
+                        StatsOverviewCard(statistics = uiState.statistics)
+                    }
+                    
+                    // Achievement Progress
+                    item {
+                        AchievementProgressCard(statistics = uiState.statistics)
+                    }
+                    
+                    // Weekly Chart
+                    item {
+                        WeeklyChartCard(weeklyData = uiState.statistics.weeklyData)
+                    }
+                    
+                    // Completion Rate
+                    item {
+                        CompletionRateCard(completionRate = uiState.statistics.completionRate)
+                    }
+                    
+                    // All-time stats
+                    item {
+                        AllTimeStatsCard(totalCompleted = uiState.statistics.totalCompletedAllTime)
+                    }
                 }
             }
         }

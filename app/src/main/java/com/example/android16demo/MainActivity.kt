@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -31,11 +33,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -72,8 +77,16 @@ class MainActivity : ComponentActivity() {
         DailySummaryWorker.scheduleDailySummary(this)
         
         setContent {
-            Android16DemoTheme {
-                LifeAppMain()
+            val app = applicationContext as LifeApp
+            // Observe theme mode from preferences
+            var themeMode by remember { mutableStateOf(app.syncPreferences.themeMode) }
+            
+            Android16DemoTheme(themeMode = themeMode) {
+                LifeAppMain(
+                    onThemeChanged = { newMode ->
+                        themeMode = newMode
+                    }
+                )
             }
         }
     }
@@ -82,12 +95,12 @@ class MainActivity : ComponentActivity() {
 /**
  * Screen routes for navigation
  */
-sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
-    data object Queue : Screen("queue", "Queue", Icons.Filled.FormatListBulleted)
-    data object Archive : Screen("archive", "Archive", Icons.Filled.Archive)
-    data object Profile : Screen("profile", "Profile", Icons.Filled.Person)
-    data object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
-    data object TaskDetail : Screen("task/{taskId}", "Task") {
+sealed class Screen(val route: String, val titleResId: Int, val icon: ImageVector? = null) {
+    data object Queue : Screen("queue", R.string.nav_queue, Icons.AutoMirrored.Filled.FormatListBulleted)
+    data object Archive : Screen("archive", R.string.nav_archive, Icons.Filled.Archive)
+    data object Profile : Screen("profile", R.string.nav_profile, Icons.Filled.Person)
+    data object Settings : Screen("settings", R.string.nav_settings, Icons.Filled.Settings)
+    data object TaskDetail : Screen("task/{taskId}", R.string.title_push_new_task) {
         fun createRoute(taskId: String?) = if (taskId != null) "task/$taskId" else "task/new"
     }
 }
@@ -107,7 +120,9 @@ private const val ANIMATION_DURATION = 300
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LifeAppMain() {
+fun LifeAppMain(
+    onThemeChanged: (String) -> Unit = {}
+) {
     val navController = rememberNavController()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -115,6 +130,9 @@ fun LifeAppMain() {
     
     // View mode toggle state
     var viewMode by rememberSaveable { mutableStateOf(ViewMode.LIST) }
+    
+    // Get app instance for repository access
+    val app = LocalContext.current.applicationContext as LifeApp
     
     // Check if current screen should show bottom nav
     val showBottomNav = bottomNavScreens.any { screen ->
@@ -124,45 +142,97 @@ fun LifeAppMain() {
     // Check if on Queue screen (to show view toggle)
     val isQueueScreen = currentDestination?.hierarchy?.any { it.route == Screen.Queue.route } == true
     
-    // Get app instance for repository access
-    val app = androidx.compose.ui.platform.LocalContext.current.applicationContext as LifeApp
+    // Check if on Profile screen (to show settings and refresh buttons)
+    val isProfileScreen = currentDestination?.hierarchy?.any { it.route == Screen.Profile.route } == true
+    
+    // Get current screen title
+    val currentTitle = when {
+        currentDestination?.route == Screen.Queue.route -> stringResource(R.string.nav_queue)
+        currentDestination?.route == Screen.Archive.route -> stringResource(R.string.nav_archive)
+        currentDestination?.route == Screen.Profile.route -> stringResource(R.string.nav_profile)
+        currentDestination?.route == Screen.Settings.route -> stringResource(R.string.nav_settings)
+        currentDestination?.route == Screen.TaskDetail.route -> {
+            val taskId = navBackStackEntry?.arguments?.getString("taskId")?.takeIf { it != "new" }
+            if (taskId != null) stringResource(R.string.title_edit_task) else stringResource(R.string.title_push_new_task)
+        }
+        else -> stringResource(R.string.app_name)
+    }
+    
+    // Show back button for settings and task detail screens
+    val showBackButton = currentDestination?.route == Screen.Settings.route ||
+        currentDestination?.route == Screen.TaskDetail.route
+    
+    // Profile ViewModel for refresh action
+    val profileViewModel: ProfileViewModel? = if (isProfileScreen) {
+        viewModel(
+            factory = ViewModelFactory(
+                repository = app.taskRepository,
+                syncPreferences = app.syncPreferences
+            )
+        )
+    } else null
     
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            if (showBottomNav) {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = "Life App",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    actions = {
-                        if (isQueueScreen) {
-                            IconButton(
-                                onClick = {
-                                    viewMode = if (viewMode == ViewMode.LIST) ViewMode.TIMELINE else ViewMode.LIST
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.Timeline else Icons.Filled.FormatListBulleted,
-                                    contentDescription = if (viewMode == ViewMode.LIST) "Timeline view" else "List view",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    },
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = currentTitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                },
+                navigationIcon = {
+                    if (showBackButton) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.btn_back)
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    if (isQueueScreen) {
+                        IconButton(
+                            onClick = {
+                                viewMode = if (viewMode == ViewMode.LIST) ViewMode.TIMELINE else ViewMode.LIST
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.Timeline else Icons.AutoMirrored.Filled.FormatListBulleted,
+                                contentDescription = if (viewMode == ViewMode.LIST) 
+                                    stringResource(R.string.view_timeline) 
+                                else 
+                                    stringResource(R.string.view_list),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    if (isProfileScreen) {
+                        IconButton(onClick = { profileViewModel?.refresh() }) {
+                            Icon(
+                                imageVector = Icons.Filled.Refresh,
+                                contentDescription = stringResource(R.string.btn_refresh)
+                            )
+                        }
+                        IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = stringResource(R.string.nav_settings)
+                            )
+                        }
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-            }
+            )
         },
         bottomBar = {
             if (showBottomNav) {
@@ -170,9 +240,11 @@ fun LifeAppMain() {
                     bottomNavScreens.forEach { screen ->
                         NavigationBarItem(
                             icon = { 
-                                screen.icon?.let { Icon(it, contentDescription = screen.title) }
+                                screen.icon?.let { 
+                                    Icon(it, contentDescription = stringResource(screen.titleResId)) 
+                                }
                             },
-                            label = { Text(screen.title) },
+                            label = { Text(stringResource(screen.titleResId)) },
                             selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                             onClick = {
                                 navController.navigate(screen.route) {
@@ -194,48 +266,62 @@ fun LifeAppMain() {
             startDestination = Screen.Queue.route,
             modifier = Modifier.padding(innerPadding),
             enterTransition = {
-                fadeIn(animationSpec = tween(ANIMATION_DURATION)) +
                 slideIntoContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Left,
                     animationSpec = tween(ANIMATION_DURATION)
-                )
+                ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
             },
             exitTransition = {
-                fadeOut(animationSpec = tween(ANIMATION_DURATION)) +
                 slideOutOfContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Left,
                     animationSpec = tween(ANIMATION_DURATION)
-                )
+                ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
             },
             popEnterTransition = {
-                fadeIn(animationSpec = tween(ANIMATION_DURATION)) +
                 slideIntoContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Right,
                     animationSpec = tween(ANIMATION_DURATION)
-                )
+                ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
             },
             popExitTransition = {
-                fadeOut(animationSpec = tween(ANIMATION_DURATION)) +
                 slideOutOfContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Right,
                     animationSpec = tween(ANIMATION_DURATION)
-                )
+                ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
             }
         ) {
             // Queue (Home) Screen - supports list and timeline views
             composable(
                 route = Screen.Queue.route,
                 enterTransition = {
-                    fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
                 },
                 exitTransition = {
-                    fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
                 }
             ) {
-                val viewModel: HomeViewModel = viewModel(
+                val homeViewModel: HomeViewModel = viewModel(
                     factory = ViewModelFactory(app.taskRepository)
                 )
-                val uiState by viewModel.uiState.collectAsState()
+                val uiState by homeViewModel.uiState.collectAsState()
                 
                 when (viewMode) {
                     ViewMode.LIST -> {
@@ -245,15 +331,15 @@ fun LifeAppMain() {
                                 navController.navigate(Screen.TaskDetail.createRoute(taskId))
                             },
                             onTaskComplete = { taskId ->
-                                viewModel.popTask(taskId)
+                                homeViewModel.popTask(taskId)
                             },
                             onTaskDelete = { taskId ->
-                                viewModel.deleteTask(taskId)
+                                homeViewModel.deleteTask(taskId)
                             },
                             onAddTask = {
                                 navController.navigate(Screen.TaskDetail.createRoute(null))
                             },
-                            onErrorDismiss = { viewModel.clearError() }
+                            onErrorDismiss = { homeViewModel.clearError() }
                         )
                     }
                     ViewMode.TIMELINE -> {
@@ -263,15 +349,15 @@ fun LifeAppMain() {
                                 navController.navigate(Screen.TaskDetail.createRoute(taskId))
                             },
                             onTaskComplete = { taskId ->
-                                viewModel.popTask(taskId)
+                                homeViewModel.popTask(taskId)
                             },
                             onTaskDelete = { taskId ->
-                                viewModel.deleteTask(taskId)
+                                homeViewModel.deleteTask(taskId)
                             },
                             onAddTask = {
                                 navController.navigate(Screen.TaskDetail.createRoute(null))
                             },
-                            onErrorDismiss = { viewModel.clearError() }
+                            onErrorDismiss = { homeViewModel.clearError() }
                         )
                     }
                 }
@@ -281,26 +367,44 @@ fun LifeAppMain() {
             composable(
                 route = Screen.Archive.route,
                 enterTransition = {
-                    fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
                 },
                 exitTransition = {
-                    fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
                 }
             ) {
-                val viewModel: ArchiveViewModel = viewModel(
+                val archiveViewModel: ArchiveViewModel = viewModel(
                     factory = ViewModelFactory(app.taskRepository)
                 )
-                val uiState by viewModel.uiState.collectAsState()
+                val uiState by archiveViewModel.uiState.collectAsState()
                 
                 ArchiveScreen(
                     uiState = uiState,
                     onDeleteTask = { taskId ->
-                        viewModel.deleteTask(taskId)
+                        archiveViewModel.deleteTask(taskId)
                     },
-                    onClearAll = { viewModel.clearAllArchived() },
-                    onSearchQueryChange = { viewModel.updateSearchQuery(it) },
-                    onTagFilterChange = { viewModel.updateSelectedTag(it) },
-                    onErrorDismiss = { viewModel.clearError() }
+                    onClearAll = { archiveViewModel.clearAllArchived() },
+                    onSearchQueryChange = { archiveViewModel.updateSearchQuery(it) },
+                    onTagFilterChange = { archiveViewModel.updateSelectedTag(it) },
+                    onErrorDismiss = { archiveViewModel.clearError() }
                 )
             }
             
@@ -308,10 +412,28 @@ fun LifeAppMain() {
             composable(
                 route = Screen.Profile.route,
                 enterTransition = {
-                    fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
                 },
                 exitTransition = {
-                    fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeIn(animationSpec = tween(ANIMATION_DURATION))
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(ANIMATION_DURATION)
+                    ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
                 }
             ) {
                 val viewModel: ProfileViewModel = viewModel(
@@ -329,7 +451,8 @@ fun LifeAppMain() {
                     onUpdateDisplayName = { viewModel.updateDisplayName(it) },
                     onUpdateMotto = { viewModel.updateMotto(it) },
                     onUpdateStatus = { viewModel.updateStatus(it) },
-                    onErrorDismiss = { viewModel.clearError() }
+                    onErrorDismiss = { viewModel.clearError() },
+                    showTopBar = false
                 )
             }
             
@@ -361,29 +484,33 @@ fun LifeAppMain() {
                     ) + fadeOut(animationSpec = tween(ANIMATION_DURATION))
                 }
             ) {
-                val viewModel: SettingsViewModel = viewModel(
+                val settingsViewModel: SettingsViewModel = viewModel(
                     factory = ViewModelFactory(
                         repository = app.taskRepository,
                         syncPreferences = app.syncPreferences,
                         templateRepository = app.templateRepository
                     )
                 )
-                val uiState by viewModel.uiState.collectAsState()
+                val uiState by settingsViewModel.uiState.collectAsState()
                 
                 SettingsScreen(
                     uiState = uiState,
-                    onLogin = { username, password -> viewModel.login(username, password) },
-                    onLogout = { viewModel.logout() },
-                    onSyncNow = { viewModel.syncNow() },
-                    onAutoSyncToggle = { viewModel.setAutoSync(it) },
-                    onWifiOnlyToggle = { viewModel.setWifiOnly(it) },
-                    onServerUrlChange = { viewModel.updateServerUrl(it) },
-                    onServerPasswordChange = { viewModel.updateServerPassword(it) },
-                    onPushTemplateChange = { viewModel.updatePushTemplate(it) },
-                    onThemeModeChange = { viewModel.updateThemeMode(it) },
-                    onLanguageChange = { viewModel.updateLanguage(it) },
+                    onLogin = { username, password -> settingsViewModel.login(username, password) },
+                    onLogout = { settingsViewModel.logout() },
+                    onSyncNow = { settingsViewModel.syncNow() },
+                    onAutoSyncToggle = { settingsViewModel.setAutoSync(it) },
+                    onWifiOnlyToggle = { settingsViewModel.setWifiOnly(it) },
+                    onServerUrlChange = { settingsViewModel.updateServerUrl(it) },
+                    onServerPasswordChange = { settingsViewModel.updateServerPassword(it) },
+                    onPushTemplateChange = { settingsViewModel.updatePushTemplate(it) },
+                    onThemeModeChange = { mode ->
+                        settingsViewModel.updateThemeMode(mode)
+                        onThemeChanged(mode)
+                    },
+                    onLanguageChange = { settingsViewModel.updateLanguage(it) },
                     onNavigateBack = { navController.popBackStack() },
-                    onErrorDismiss = { viewModel.clearMessages() }
+                    onErrorDismiss = { settingsViewModel.clearMessages() },
+                    showTopBar = false
                 )
             }
             
@@ -422,26 +549,27 @@ fun LifeAppMain() {
                 }
             ) { backStackEntry ->
                 val taskId = backStackEntry.arguments?.getString("taskId")?.takeIf { it != "new" }
-                val viewModel: TaskDetailViewModel = viewModel(
+                val taskDetailViewModel: TaskDetailViewModel = viewModel(
                     factory = ViewModelFactory(app.taskRepository, taskId)
                 )
-                val uiState by viewModel.uiState.collectAsState()
+                val uiState by taskDetailViewModel.uiState.collectAsState()
                 
                 TaskDetailScreen(
                     uiState = uiState,
-                    isEditMode = viewModel.isEditMode,
-                    onTitleChange = { viewModel.updateTitle(it) },
-                    onDescriptionChange = { viewModel.updateDescription(it) },
-                    onStartTimeChange = { viewModel.updateStartTime(it) },
-                    onDeadlineChange = { viewModel.updateDeadline(it) },
-                    onPriorityChange = { viewModel.updatePriority(it) },
-                    onProgressChange = { viewModel.updateProgress(it) },
-                    onIsPublicChange = { viewModel.updateIsPublic(it) },
-                    onAddTag = { viewModel.addTag(it) },
-                    onRemoveTag = { viewModel.removeTag(it) },
-                    onSave = { viewModel.saveTask() },
+                    isEditMode = taskDetailViewModel.isEditMode,
+                    onTitleChange = { taskDetailViewModel.updateTitle(it) },
+                    onDescriptionChange = { taskDetailViewModel.updateDescription(it) },
+                    onStartTimeChange = { taskDetailViewModel.updateStartTime(it) },
+                    onDeadlineChange = { taskDetailViewModel.updateDeadline(it) },
+                    onPriorityChange = { taskDetailViewModel.updatePriority(it) },
+                    onProgressChange = { taskDetailViewModel.updateProgress(it) },
+                    onIsPublicChange = { taskDetailViewModel.updateIsPublic(it) },
+                    onAddTag = { taskDetailViewModel.addTag(it) },
+                    onRemoveTag = { taskDetailViewModel.removeTag(it) },
+                    onSave = { taskDetailViewModel.saveTask() },
                     onNavigateBack = { navController.popBackStack() },
-                    onErrorDismiss = { viewModel.clearError() }
+                    onErrorDismiss = { taskDetailViewModel.clearError() },
+                    showTopBar = false
                 )
             }
         }

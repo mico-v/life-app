@@ -14,11 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Dns
-import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Wifi
@@ -76,14 +73,10 @@ fun SettingsScreen(
     onLanguageChange: (String) -> Unit = {},
     onNavigateBack: () -> Unit,
     onErrorDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTopBar: Boolean = true
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // Login form state
-    var loginUsername by remember { mutableStateOf("") }
-    var loginPassword by remember { mutableStateOf("") }
-    var showLoginForm by remember { mutableStateOf(false) }
     
     // Server URL editing state
     var editingServerUrl by remember { mutableStateOf(false) }
@@ -117,21 +110,23 @@ fun SettingsScreen(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            if (showTopBar) {
+                TopAppBar(
+                    title = { Text("Settings") },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
-            )
+            }
         }
     ) { paddingValues ->
         LazyColumn(
@@ -141,31 +136,6 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Account Section
-            item {
-                SettingsSectionHeader(title = "Account")
-            }
-            
-            item {
-                AccountCard(
-                    isLoggedIn = uiState.isLoggedIn,
-                    username = uiState.username,
-                    isLoggingIn = uiState.isLoggingIn,
-                    showLoginForm = showLoginForm,
-                    loginUsername = loginUsername,
-                    loginPassword = loginPassword,
-                    onUsernameChange = { loginUsername = it },
-                    onPasswordChange = { loginPassword = it },
-                    onShowLoginForm = { showLoginForm = true },
-                    onHideLoginForm = { showLoginForm = false },
-                    onLogin = {
-                        onLogin(loginUsername, loginPassword)
-                        loginPassword = ""
-                    },
-                    onLogout = onLogout
-                )
-            }
-            
             // Server Section
             item {
                 SettingsSectionHeader(title = "Server Configuration")
@@ -226,7 +196,7 @@ fun SettingsScreen(
             
             item {
                 SyncCard(
-                    isLoggedIn = uiState.isLoggedIn,
+                    isLoggedIn = uiState.isSyncConfigured,
                     lastSyncTime = uiState.lastSyncTime,
                     isSyncing = uiState.isSyncing,
                     autoSyncEnabled = uiState.autoSyncEnabled,
@@ -562,148 +532,6 @@ private fun PushTemplateCard(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(start = 8.dp)
                     )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AccountCard(
-    isLoggedIn: Boolean,
-    username: String?,
-    isLoggingIn: Boolean,
-    showLoginForm: Boolean,
-    loginUsername: String,
-    loginPassword: String,
-    onUsernameChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onShowLoginForm: () -> Unit,
-    onHideLoginForm: () -> Unit,
-    onLogin: () -> Unit,
-    onLogout: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            if (isLoggedIn) {
-                // Logged in state
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 16.dp)
-                    ) {
-                        Text(
-                            text = username ?: "User",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = "Logged in",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    OutlinedButton(onClick = onLogout) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text("Logout", modifier = Modifier.padding(start = 4.dp))
-                    }
-                }
-            } else if (showLoginForm) {
-                // Login form
-                OutlinedTextField(
-                    value = loginUsername,
-                    onValueChange = onUsernameChange,
-                    label = { Text("Username") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = loginPassword,
-                    onValueChange = onPasswordChange,
-                    label = { Text("Password") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onHideLoginForm,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Cancel")
-                    }
-                    Button(
-                        onClick = onLogin,
-                        modifier = Modifier.weight(1f),
-                        enabled = loginUsername.isNotBlank() && loginPassword.isNotBlank() && !isLoggingIn
-                    ) {
-                        if (isLoggingIn) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text("Login")
-                        }
-                    }
-                }
-            } else {
-                // Not logged in, show login button
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onShowLoginForm() }
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Login,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 16.dp)
-                    ) {
-                        Text(
-                            text = "Sign in to sync",
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                        Text(
-                            text = "Backup your tasks and access them anywhere",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
         }

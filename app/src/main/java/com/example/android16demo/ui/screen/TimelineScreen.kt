@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.android16demo.data.entity.Task
-import com.example.android16demo.ui.components.TimelineView
+import com.example.android16demo.ui.components.SimpleGanttView
 import com.example.android16demo.ui.theme.Android16DemoTheme
 import com.example.android16demo.viewmodel.HomeUiState
 
@@ -87,7 +87,7 @@ fun TimelineScreen(
                     )
                 }
                 else -> {
-                    TimelineView(
+                    SimpleGanttView(
                         tasks = uiState.activeTasks,
                         onTaskClick = onTaskClick,
                         onTaskComplete = onTaskComplete,

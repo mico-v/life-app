@@ -86,7 +86,8 @@ fun ProfileScreenContent(
     onUpdateMotto: (String) -> Unit,
     onUpdateStatus: (String) -> Unit,
     onErrorDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTopBar: Boolean = true
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -101,27 +102,29 @@ fun ProfileScreenContent(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
-                actions = {
-                    IconButton(onClick = onRefresh) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh"
-                        )
-                    }
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            if (showTopBar) {
+                TopAppBar(
+                    title = { Text("Profile") },
+                    actions = {
+                        IconButton(onClick = onRefresh) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh"
+                            )
+                        }
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
-            )
+            }
         }
     ) { paddingValues ->
         if (uiState.isLoading) {

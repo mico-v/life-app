@@ -96,7 +96,8 @@ fun TaskDetailScreen(
     onSave: () -> Unit,
     onNavigateBack: () -> Unit,
     onErrorDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTopBar: Boolean = true
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var tagInput by remember { mutableStateOf("") }
@@ -119,23 +120,25 @@ fun TaskDetailScreen(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(if (isEditMode) "Edit Task" else "Push New Task") 
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            if (showTopBar) {
+                TopAppBar(
+                    title = { 
+                        Text(if (isEditMode) "Edit Task" else "Push New Task") 
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
-            )
+            }
         }
     ) { paddingValues ->
         if (uiState.isLoading) {

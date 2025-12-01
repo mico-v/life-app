@@ -62,11 +62,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.android16demo.R
 import com.example.android16demo.ui.theme.Android16DemoTheme
 import com.example.android16demo.viewmodel.DayStats
 import com.example.android16demo.viewmodel.ProfileUiState
@@ -104,18 +106,18 @@ fun ProfileScreenContent(
         topBar = {
             if (showTopBar) {
                 TopAppBar(
-                    title = { Text("Profile") },
+                    title = { Text(stringResource(R.string.title_profile)) },
                     actions = {
                         IconButton(onClick = onRefresh) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh"
+                                contentDescription = stringResource(R.string.btn_refresh)
                             )
                         }
                         IconButton(onClick = onSettingsClick) {
                             Icon(
                                 imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings"
+                                contentDescription = stringResource(R.string.nav_settings)
                             )
                         }
                     },
@@ -245,7 +247,7 @@ private fun UserInfoCard(
                         OutlinedTextField(
                             value = editName,
                             onValueChange = { editName = it },
-                            label = { Text("Display Name") },
+                            label = { Text(stringResource(R.string.label_display_name)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -263,7 +265,7 @@ private fun UserInfoCard(
                     }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit profile",
+                            contentDescription = stringResource(R.string.btn_edit),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
@@ -277,7 +279,7 @@ private fun UserInfoCard(
                 OutlinedTextField(
                     value = editMotto,
                     onValueChange = { editMotto = it },
-                    label = { Text("Personal Motto") },
+                    label = { Text(stringResource(R.string.label_motto)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -310,7 +312,7 @@ private fun UserInfoCard(
                         editMotto = userProfile.motto
                         isEditing = false
                     }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.btn_cancel))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
@@ -318,7 +320,7 @@ private fun UserInfoCard(
                         onUpdateMotto(editMotto)
                         isEditing = false
                     }) {
-                        Text("Save")
+                        Text(stringResource(R.string.btn_save))
                     }
                 }
             }
@@ -355,7 +357,7 @@ private fun StatusCard(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "Status: ",
+                text = stringResource(R.string.label_status) + ": ",
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
@@ -376,13 +378,18 @@ private fun AchievementProgressCard(
     statistics: TaskStatistics,
     modifier: Modifier = Modifier
 ) {
-    val achievements = listOf(
-        Triple("First Steps", 1, statistics.totalCompletedAllTime >= 1),
-        Triple("Getting Started", 10, statistics.totalCompletedAllTime >= 10),
-        Triple("Productive", 50, statistics.totalCompletedAllTime >= 50),
-        Triple("Master", 100, statistics.totalCompletedAllTime >= 100),
-        Triple("Legend", 500, statistics.totalCompletedAllTime >= 500)
-    )
+    @Composable
+    fun achievementsList(): List<Triple<String, Int, Boolean>> {
+        return listOf(
+            Triple(stringResource(R.string.achievement_first_steps), 1, statistics.totalCompletedAllTime >= 1),
+            Triple(stringResource(R.string.achievement_getting_started), 10, statistics.totalCompletedAllTime >= 10),
+            Triple(stringResource(R.string.achievement_productive), 50, statistics.totalCompletedAllTime >= 50),
+            Triple(stringResource(R.string.achievement_master), 100, statistics.totalCompletedAllTime >= 100),
+            Triple(stringResource(R.string.achievement_legend), 500, statistics.totalCompletedAllTime >= 500)
+        )
+    }
+    
+    val achievements = achievementsList()
     
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
@@ -400,7 +407,7 @@ private fun AchievementProgressCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Achievements",
+                    text = stringResource(R.string.title_achievements),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -428,7 +435,7 @@ private fun AchievementProgressCard(
                             color = if (achieved) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
                         )
                         Text(
-                            text = "Complete $target tasks",
+                            text = stringResource(R.string.achievement_complete_tasks, target),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -436,7 +443,7 @@ private fun AchievementProgressCard(
                     if (achieved) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Achieved",
+                            contentDescription = stringResource(R.string.completed),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -462,7 +469,7 @@ private fun StatsOverviewCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Statistics",
+                text = stringResource(R.string.title_statistics),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -475,19 +482,19 @@ private fun StatsOverviewCard(
                 StatItem(
                     icon = Icons.Default.CheckCircle,
                     value = statistics.completedToday.toString(),
-                    label = "Today",
+                    label = stringResource(R.string.stats_today),
                     color = MaterialTheme.colorScheme.primary
                 )
                 StatItem(
                     icon = Icons.Default.TrendingUp,
                     value = statistics.completedThisWeek.toString(),
-                    label = "This Week",
+                    label = stringResource(R.string.stats_this_week),
                     color = MaterialTheme.colorScheme.tertiary
                 )
                 StatItem(
                     icon = Icons.Default.Pending,
                     value = statistics.activeTasks.toString(),
-                    label = "Active",
+                    label = stringResource(R.string.stats_active),
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
@@ -546,7 +553,7 @@ private fun WeeklyChartCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Weekly Activity",
+                text = stringResource(R.string.title_weekly_activity),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -641,7 +648,7 @@ private fun CompletionRateCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "On-Time Completion Rate",
+                text = stringResource(R.string.title_completion_rate),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -663,7 +670,7 @@ private fun CompletionRateCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "on time",
+                        text = stringResource(R.string.label_on_time),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -689,7 +696,7 @@ private fun AllTimeStatsCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "All-Time Tasks Completed",
+                text = stringResource(R.string.title_all_time),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

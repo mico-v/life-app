@@ -423,7 +423,8 @@ fun LifeAppMain(
                     onClearAll = { archiveViewModel.clearAllArchived() },
                     onSearchQueryChange = { archiveViewModel.updateSearchQuery(it) },
                     onTagFilterChange = { archiveViewModel.updateSelectedTag(it) },
-                    onErrorDismiss = { archiveViewModel.clearError() }
+                    onErrorDismiss = { archiveViewModel.clearError() },
+                    showTopBar = false
                 )
             }
             

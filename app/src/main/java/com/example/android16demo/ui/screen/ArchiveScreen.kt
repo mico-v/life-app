@@ -47,10 +47,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.android16demo.R
 import com.example.android16demo.data.entity.Task
 import com.example.android16demo.ui.theme.Android16DemoTheme
 import com.example.android16demo.viewmodel.ArchiveUiState
@@ -70,7 +72,8 @@ fun ArchiveScreen(
     onSearchQueryChange: (String) -> Unit = {},
     onTagFilterChange: (String?) -> Unit = {},
     onErrorDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTopBar: Boolean = true
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var showClearAllDialog by remember { mutableStateOf(false) }
@@ -85,8 +88,8 @@ fun ArchiveScreen(
     if (showClearAllDialog) {
         AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
-            title = { Text("Clear Archive") },
-            text = { Text("Are you sure you want to delete all archived tasks? This cannot be undone.") },
+            title = { Text(stringResource(R.string.clear_archive)) },
+            text = { Text(stringResource(R.string.confirm_clear_archive)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -94,12 +97,12 @@ fun ArchiveScreen(
                         showClearAllDialog = false
                     }
                 ) {
-                    Text("Delete All", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.btn_delete_all), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )
@@ -109,23 +112,25 @@ fun ArchiveScreen(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Archive") },
-                actions = {
-                    if (uiState.archivedTasks.isNotEmpty()) {
-                        IconButton(onClick = { showClearAllDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Default.DeleteSweep,
-                                contentDescription = "Clear all"
-                            )
+            if (showTopBar) {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.title_archive)) },
+                    actions = {
+                        if (uiState.archivedTasks.isNotEmpty()) {
+                            IconButton(onClick = { showClearAllDialog = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteSweep,
+                                    contentDescription = stringResource(R.string.clear_archive)
+                                )
+                            }
                         }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
-            )
+            }
         }
     ) { paddingValues ->
         Box(
@@ -153,11 +158,11 @@ fun ArchiveScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
-                            placeholder = { Text("Search tasks...") },
+                            placeholder = { Text(stringResource(R.string.search_hint)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Search,
-                                    contentDescription = "Search"
+                                    contentDescription = stringResource(R.string.search_hint)
                                 )
                             },
                             trailingIcon = {
@@ -165,7 +170,7 @@ fun ArchiveScreen(
                                     IconButton(onClick = { onSearchQueryChange("") }) {
                                         Icon(
                                             imageVector = Icons.Default.Clear,
-                                            contentDescription = "Clear search"
+                                            contentDescription = stringResource(R.string.btn_clear)
                                         )
                                     }
                                 }
@@ -185,7 +190,7 @@ fun ArchiveScreen(
                                 FilterChip(
                                     selected = uiState.selectedTag == null,
                                     onClick = { onTagFilterChange(null) },
-                                    label = { Text("All") }
+                                    label = { Text(stringResource(R.string.all_tags)) }
                                 )
                                 uiState.allTags.forEach { tag ->
                                     FilterChip(
@@ -323,13 +328,13 @@ private fun EmptyArchiveMessage(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Archive is Empty",
+            text = stringResource(R.string.empty_archive_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Completed tasks will appear here",
+            text = stringResource(R.string.empty_archive_message),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

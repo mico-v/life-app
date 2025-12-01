@@ -45,9 +45,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.android16demo.R
 import com.example.android16demo.ui.theme.Android16DemoTheme
 import com.example.android16demo.viewmodel.SettingsUiState
 import java.text.SimpleDateFormat
@@ -112,12 +114,12 @@ fun SettingsScreen(
         topBar = {
             if (showTopBar) {
                 TopAppBar(
-                    title = { Text("Settings") },
+                    title = { Text(stringResource(R.string.title_settings)) },
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = stringResource(R.string.btn_back)
                             )
                         }
                     },
@@ -138,7 +140,7 @@ fun SettingsScreen(
         ) {
             // Server Section
             item {
-                SettingsSectionHeader(title = "Server Configuration")
+                SettingsSectionHeader(title = stringResource(R.string.section_server))
             }
             
             item {
@@ -165,7 +167,7 @@ fun SettingsScreen(
             
             // Appearance Section
             item {
-                SettingsSectionHeader(title = "Appearance")
+                SettingsSectionHeader(title = stringResource(R.string.section_appearance))
             }
             
             item {
@@ -179,7 +181,7 @@ fun SettingsScreen(
             
             // Push Templates Section
             item {
-                SettingsSectionHeader(title = "Push Notifications")
+                SettingsSectionHeader(title = stringResource(R.string.title_push_templates))
             }
             
             item {
@@ -191,7 +193,7 @@ fun SettingsScreen(
             
             // Sync Section
             item {
-                SettingsSectionHeader(title = "Sync")
+                SettingsSectionHeader(title = stringResource(R.string.section_sync))
             }
             
             item {
@@ -209,7 +211,7 @@ fun SettingsScreen(
             
             // About Section
             item {
-                SettingsSectionHeader(title = "About")
+                SettingsSectionHeader(title = stringResource(R.string.section_about))
             }
             
             item {

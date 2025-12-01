@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -48,16 +50,17 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * Daily Calendar View - A proper calendar-style view for tasks
  * 
  * Features:
- * - Time scale on left (00:00 - 24:00)
- * - 1 hour = 60dp (adjustable with pinch zoom)
- * - Task height based on duration
+ * - Dynamic time range based on task times (with 1 hour buffer)
+ * - Task height strictly based on duration (1 minute = 1dp at scale 1.0)
  * - Task position based on start time
  * - Overlapping tasks displayed side by side
+ * - Pinch-to-zoom for time scale
  */
 @Composable
 fun DailyCalendarView(
@@ -73,44 +76,53 @@ fun DailyCalendarView(
     // Scale factor for pinch-to-zoom (1.0 = default)
     var scale by remember { mutableFloatStateOf(1f) }
     
-    // Base height per hour: 60dp
+    // Base height per hour: 60dp (so 1 minute = 1dp)
     val baseHourHeightDp = 60.dp
     val hourHeightDp = baseHourHeightDp * scale.coerceIn(0.5f, 3f)
     
-    // Total hours to display (24 hours)
-    val totalHours = 24
-    val totalHeightDp = hourHeightDp * totalHours
-    
-    // Calculate current hour for initial scroll
+    // Get start of today
     val calendar = Calendar.getInstance()
     val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-    val hourHeightPx = with(density) { hourHeightDp.toPx() }
+    val currentMinute = calendar.get(Calendar.MINUTE)
     
-    // Scroll to current hour minus some offset for context
-    LaunchedEffect(Unit) {
-        val targetScroll = ((currentHour - 2).coerceAtLeast(0) * hourHeightPx).toInt()
-        scrollState.scrollTo(targetScroll)
-    }
-    
-    // Pinch-to-zoom
-    val transformableState = rememberTransformableState { zoomChange, _, _ ->
-        scale = (scale * zoomChange).coerceIn(0.5f, 3f)
-    }
-    
-    // Get start of today
     calendar.set(Calendar.HOUR_OF_DAY, 0)
     calendar.set(Calendar.MINUTE, 0)
     calendar.set(Calendar.SECOND, 0)
     calendar.set(Calendar.MILLISECOND, 0)
     val todayStart = calendar.timeInMillis
     val todayEnd = todayStart + 24 * 60 * 60 * 1000L
+    val now = System.currentTimeMillis()
     
-    // Filter and process tasks for today
+    // Filter tasks for today
     val todayTasks = tasks.filter { task ->
         val taskStart = task.startTime ?: task.createdAt
         val taskEnd = task.deadline ?: (taskStart + 60 * 60 * 1000L)
         // Include tasks that overlap with today
         taskStart < todayEnd && taskEnd > todayStart
+    }
+    
+    // Calculate dynamic time range based on tasks
+    val (displayStartHour, displayEndHour) = calculateDynamicRange(todayTasks, currentHour, todayStart)
+    val displayHours = displayEndHour - displayStartHour
+    val totalHeightDp = hourHeightDp * displayHours
+    
+    // Calculate initial scroll position to show current time
+    val hourHeightPx = with(density) { hourHeightDp.toPx() }
+    val currentTimeOffset = if (currentHour in displayStartHour until displayEndHour) {
+        ((currentHour - displayStartHour) + currentMinute / 60f) * hourHeightPx
+    } else {
+        0f
+    }
+    
+    // Scroll to show current time with some context
+    LaunchedEffect(Unit) {
+        val targetScroll = (currentTimeOffset - 100f).coerceAtLeast(0f).toInt()
+        scrollState.scrollTo(targetScroll)
+    }
+    
+    // Pinch-to-zoom
+    val transformableState = rememberTransformableState { zoomChange, _, _ ->
+        scale = (scale * zoomChange).coerceIn(0.5f, 3f)
     }
     
     // Calculate overlapping groups for concurrent tasks
@@ -129,7 +141,8 @@ fun DailyCalendarView(
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .verticalScroll(scrollState)
         ) {
-            repeat(totalHours) { hour ->
+            repeat(displayHours) { index ->
+                val hour = displayStartHour + index
                 TimeSlotLabel(
                     hour = hour,
                     height = hourHeightDp,
@@ -147,19 +160,18 @@ fun DailyCalendarView(
         ) {
             // Background grid
             val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
-            val currentTimeColor = MaterialTheme.colorScheme.primary
-            val now = System.currentTimeMillis()
+            val currentTimeColor = MaterialTheme.colorScheme.error
             
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(totalHeightDp)
             ) {
-                val hourHeightPxCanvas = size.height / totalHours
+                val hourHeightPxCanvas = size.height / displayHours
                 
                 // Draw horizontal lines for each hour
-                repeat(totalHours + 1) { hour ->
-                    val y = hour * hourHeightPxCanvas
+                repeat(displayHours + 1) { index ->
+                    val y = index * hourHeightPxCanvas
                     drawLine(
                         color = gridColor,
                         start = Offset(0f, y),
@@ -169,11 +181,10 @@ fun DailyCalendarView(
                 }
                 
                 // Draw current time indicator
-                if (now in todayStart until todayEnd) {
-                    val minutesSinceMidnight = ((now - todayStart) / (60 * 1000f))
-                    val currentY = (minutesSinceMidnight / 60f) * hourHeightPxCanvas
+                if (currentHour in displayStartHour until displayEndHour) {
+                    val currentY = ((currentHour - displayStartHour) + currentMinute / 60f) * hourHeightPxCanvas
                     
-                    // Current time line
+                    // Current time line (red)
                     drawLine(
                         color = currentTimeColor,
                         start = Offset(0f, currentY),
@@ -195,6 +206,7 @@ fun DailyCalendarView(
                     .fillMaxSize()
             ) {
                 val containerWidth = maxWidth
+                val displayStartMillis = todayStart + displayStartHour * 60 * 60 * 1000L
                 
                 taskGroups.forEach { group ->
                     val columnCount = group.tasks.size
@@ -205,37 +217,94 @@ fun DailyCalendarView(
                         val taskStart = (task.startTime ?: task.createdAt).coerceAtLeast(todayStart)
                         val taskEnd = (task.deadline ?: (taskStart + 60 * 60 * 1000L)).coerceAtMost(todayEnd)
                         
-                        val startMinutes = ((taskStart - todayStart) / (60 * 1000f))
-                        val endMinutes = ((taskEnd - todayStart) / (60 * 1000f))
-                        val durationMinutes = (endMinutes - startMinutes).coerceAtLeast(30f)
+                        // Convert to minutes from display start
+                        val startMinutesFromDisplayStart = ((taskStart - displayStartMillis) / (60 * 1000f))
+                        val endMinutesFromDisplayStart = ((taskEnd - displayStartMillis) / (60 * 1000f))
+                        val durationMinutes = (endMinutesFromDisplayStart - startMinutesFromDisplayStart)
                         
-                        val topOffsetDp = hourHeightDp * (startMinutes / 60f)
-                        val heightDp = (hourHeightDp * (durationMinutes / 60f)).coerceAtLeast(40.dp)
+                        // Key fix: Height is strictly based on duration
+                        // 60 minutes = hourHeightDp, so 1 minute = hourHeightDp / 60
+                        val topOffsetDp = hourHeightDp * (startMinutesFromDisplayStart / 60f)
+                        
+                        // Minimum height of 2dp for visibility, but otherwise strictly based on duration
+                        val minHeightDp = 2.dp
+                        val calculatedHeight = hourHeightDp * (durationMinutes / 60f)
+                        val heightDp = calculatedHeight.coerceAtLeast(minHeightDp)
                         
                         // Width and position based on how many overlapping tasks
                         val taskWidth = containerWidth / columnCount
                         val leftOffset = taskWidth * index
                         
-                        Box(
-                            modifier = Modifier
-                                .width(taskWidth)
-                                .offset(
-                                    x = leftOffset,
-                                    y = topOffsetDp
+                        // Only render if within visible range
+                        if (startMinutesFromDisplayStart >= 0 && startMinutesFromDisplayStart < displayHours * 60) {
+                            Box(
+                                modifier = Modifier
+                                    .width(taskWidth)
+                                    .offset(
+                                        x = leftOffset,
+                                        y = topOffsetDp
+                                    )
+                                    .padding(horizontal = 2.dp, vertical = 1.dp)
+                            ) {
+                                CalendarTaskCard(
+                                    task = task,
+                                    height = heightDp,
+                                    onClick = { onTaskClick(task.id) }
                                 )
-                                .padding(horizontal = 2.dp, vertical = 1.dp)
-                        ) {
-                            CalendarTaskCard(
-                                task = task,
-                                height = heightDp,
-                                onClick = { onTaskClick(task.id) }
-                            )
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * Calculate dynamic time range based on tasks
+ * Returns (startHour, endHour) with 1 hour buffer on each side
+ */
+private fun calculateDynamicRange(tasks: List<Task>, currentHour: Int, todayStart: Long): Pair<Int, Int> {
+    if (tasks.isEmpty()) {
+        // No tasks: show 4 hours before and after current time
+        val startHour = (currentHour - 4).coerceAtLeast(0)
+        val endHour = (currentHour + 4).coerceAtMost(24)
+        return Pair(startHour, endHour)
+    }
+    
+    // Find earliest start time and latest end time
+    var minHour = 24
+    var maxHour = 0
+    
+    tasks.forEach { task ->
+        val taskStart = task.startTime ?: task.createdAt
+        val taskEnd = task.deadline ?: (taskStart + 60 * 60 * 1000L)
+        
+        val startHourOfTask = ((taskStart - todayStart) / (60 * 60 * 1000f)).toInt().coerceIn(0, 23)
+        val endHourOfTask = ((taskEnd - todayStart) / (60 * 60 * 1000f)).toInt().coerceIn(0, 24)
+        
+        minHour = minOf(minHour, startHourOfTask)
+        maxHour = maxOf(maxHour, endHourOfTask + 1) // +1 to include the end hour
+    }
+    
+    // Add 1 hour buffer on each side
+    val startHour = (minHour - 1).coerceAtLeast(0)
+    val endHour = (maxHour + 1).coerceAtMost(24)
+    
+    // Also ensure current hour is visible if within reasonable range
+    val adjustedStartHour = if (currentHour < startHour && currentHour >= startHour - 4) {
+        currentHour
+    } else {
+        startHour
+    }
+    
+    val adjustedEndHour = if (currentHour >= endHour && currentHour <= endHour + 4) {
+        currentHour + 1
+    } else {
+        endHour
+    }
+    
+    return Pair(adjustedStartHour.coerceAtLeast(0), adjustedEndHour.coerceAtMost(24))
 }
 
 /**
@@ -273,7 +342,7 @@ private fun TimeSlotLabel(
 }
 
 /**
- * Task card for calendar view
+ * Task card for calendar view with ripple effect
  */
 @Composable
 private fun CalendarTaskCard(
@@ -301,7 +370,11 @@ private fun CalendarTaskCard(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .clickable { onClick() },
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = rememberRipple(),
+                onClick = onClick
+            ),
         colors = CardDefaults.cardColors(
             containerColor = animatedColor.copy(alpha = 0.85f)
         ),

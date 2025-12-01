@@ -1,5 +1,7 @@
 package com.example.android16demo.ui.screen
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -142,7 +144,12 @@ fun TaskQueueScreen(
                                     task = task,
                                     onComplete = { onTaskComplete(task.id) },
                                     onDelete = { onTaskDelete(task.id) },
-                                    onClick = { onTaskClick(task.id) }
+                                    onClick = { onTaskClick(task.id) },
+                                    modifier = Modifier.animateItem(
+                                        fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                        fadeOutSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                        placementSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                                    )
                                 )
                             }
                             

@@ -1,5 +1,7 @@
 package com.example.android16demo.ui.screen
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -247,7 +249,12 @@ fun ArchiveScreen(
                                 ) { task ->
                                     ArchivedTaskCard(
                                         task = task,
-                                        onDelete = { onDeleteTask(task.id) }
+                                        onDelete = { onDeleteTask(task.id) },
+                                        modifier = Modifier.animateItem(
+                                            fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                            fadeOutSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                            placementSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                                        )
                                     )
                                 }
                             }

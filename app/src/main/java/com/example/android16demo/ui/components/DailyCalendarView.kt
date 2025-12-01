@@ -273,18 +273,18 @@ private fun calculateDynamicRange(tasks: List<Task>, currentHour: Int, todayStar
     }
     
     // Find earliest start time and latest end time
-    var minHour = 24
-    var maxHour = 0
+    var minHour = Int.MAX_VALUE
+    var maxHour = Int.MIN_VALUE
     
     tasks.forEach { task ->
         val taskStart = task.startTime ?: task.createdAt
         val taskEnd = task.deadline ?: (taskStart + 60 * 60 * 1000L)
         
-        val startHourOfTask = ((taskStart - todayStart) / (60 * 60 * 1000f)).toInt().coerceIn(0, 23)
-        val endHourOfTask = ((taskEnd - todayStart) / (60 * 60 * 1000f)).toInt().coerceIn(0, 24)
+        val startHourOfTask = ((taskStart - todayStart) / (60 * 60 * 1000f)).roundToInt().coerceIn(0, 23)
+        val endHourOfTask = ((taskEnd - todayStart) / (60 * 60 * 1000f)).roundToInt().coerceIn(1, 24)
         
         minHour = minOf(minHour, startHourOfTask)
-        maxHour = maxOf(maxHour, endHourOfTask + 1) // +1 to include the end hour
+        maxHour = maxOf(maxHour, endHourOfTask)
     }
     
     // Add 1 hour buffer on each side
@@ -299,7 +299,7 @@ private fun calculateDynamicRange(tasks: List<Task>, currentHour: Int, todayStar
     }
     
     val adjustedEndHour = if (currentHour >= endHour && currentHour <= endHour + 4) {
-        currentHour + 1
+        (currentHour + 1).coerceAtMost(24)
     } else {
         endHour
     }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -189,40 +190,47 @@ fun DailyCalendarView(
             }
             
             // Render tasks with proper positioning and overlap handling
-            taskGroups.forEach { group ->
-                val columnCount = group.tasks.size
-                group.tasks.forEachIndexed { index, taskWithPosition ->
-                    val task = taskWithPosition.task
-                    
-                    // Calculate task position
-                    val taskStart = (task.startTime ?: task.createdAt).coerceAtLeast(todayStart)
-                    val taskEnd = (task.deadline ?: (taskStart + 60 * 60 * 1000L)).coerceAtMost(todayEnd)
-                    
-                    val startMinutes = ((taskStart - todayStart) / (60 * 1000f))
-                    val endMinutes = ((taskEnd - todayStart) / (60 * 1000f))
-                    val durationMinutes = (endMinutes - startMinutes).coerceAtLeast(30f)
-                    
-                    val topOffsetDp = hourHeightDp * (startMinutes / 60f)
-                    val heightDp = (hourHeightDp * (durationMinutes / 60f)).coerceAtLeast(40.dp)
-                    
-                    // Width based on how many overlapping tasks
-                    val widthFraction = 1f / columnCount
-                    val leftOffsetFraction = index * widthFraction
-                    
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(widthFraction)
-                            .offset(
-                                x = (leftOffsetFraction * 300).dp, // Approximate offset
-                                y = topOffsetDp
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                val containerWidth = maxWidth
+                
+                taskGroups.forEach { group ->
+                    val columnCount = group.tasks.size
+                    group.tasks.forEachIndexed { index, taskWithPosition ->
+                        val task = taskWithPosition.task
+                        
+                        // Calculate task position
+                        val taskStart = (task.startTime ?: task.createdAt).coerceAtLeast(todayStart)
+                        val taskEnd = (task.deadline ?: (taskStart + 60 * 60 * 1000L)).coerceAtMost(todayEnd)
+                        
+                        val startMinutes = ((taskStart - todayStart) / (60 * 1000f))
+                        val endMinutes = ((taskEnd - todayStart) / (60 * 1000f))
+                        val durationMinutes = (endMinutes - startMinutes).coerceAtLeast(30f)
+                        
+                        val topOffsetDp = hourHeightDp * (startMinutes / 60f)
+                        val heightDp = (hourHeightDp * (durationMinutes / 60f)).coerceAtLeast(40.dp)
+                        
+                        // Width and position based on how many overlapping tasks
+                        val taskWidth = containerWidth / columnCount
+                        val leftOffset = taskWidth * index
+                        
+                        Box(
+                            modifier = Modifier
+                                .width(taskWidth)
+                                .offset(
+                                    x = leftOffset,
+                                    y = topOffsetDp
+                                )
+                                .padding(horizontal = 2.dp, vertical = 1.dp)
+                        ) {
+                            CalendarTaskCard(
+                                task = task,
+                                height = heightDp,
+                                onClick = { onTaskClick(task.id) }
                             )
-                            .padding(horizontal = 2.dp, vertical = 1.dp)
-                    ) {
-                        CalendarTaskCard(
-                            task = task,
-                            height = heightDp,
-                            onClick = { onTaskClick(task.id) }
-                        )
+                        }
                     }
                 }
             }

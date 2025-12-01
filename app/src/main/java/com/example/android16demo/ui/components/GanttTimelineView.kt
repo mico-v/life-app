@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,12 +34,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -60,10 +57,10 @@ import java.util.Locale
 
 /**
  * Vertical Gantt Chart style Timeline View
- * Displays tasks on a vertical timeline with time scale on left.
- * - Scroll up: view past/overdue tasks
- * - Scroll down: view future tasks
- * - Pinch to zoom: adjust time scale
+ * - Time scale on left side
+ * - Tasks on right side
+ * - Scroll up/down to view past/future tasks
+ * - Pinch to zoom the time scale
  */
 @Composable
 fun SimpleGanttView(
@@ -76,234 +73,169 @@ fun SimpleGanttView(
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     
-    // Scale factor for pinch-to-zoom (1.0 = default, higher = more zoomed in)
+    // Scale factor for pinch-to-zoom
     var scale by remember { mutableFloatStateOf(1f) }
     
-    // Base height per hour (scaled)
+    // Base height per hour
     val baseHourHeightDp = 60.dp
     val hourHeightDp = baseHourHeightDp * scale.coerceIn(0.5f, 3f)
     
-    // Time range: 3 days before to 4 days after = 7 days
-    val totalHours = 168 // 7 days
+    // Time range: 3 days before to 4 days after
+    val totalHours = 168
     val daysBeforeNow = 3
+    val totalHeightDp = hourHeightDp * totalHours
     
-    // Calculate initial scroll position to center on current time
+    // Initial scroll position
     val hourHeightPx = with(density) { hourHeightDp.toPx() }
     val hoursFromStart = daysBeforeNow * 24
     
-    // Set initial scroll position to current time
     LaunchedEffect(Unit) {
         scrollState.scrollTo((hoursFromStart * hourHeightPx - 200).toInt().coerceAtLeast(0))
     }
     
-    // Pinch-to-zoom state
+    // Pinch-to-zoom
     val transformableState = rememberTransformableState { zoomChange, _, _ ->
         scale = (scale * zoomChange).coerceIn(0.5f, 3f)
     }
+    
+    // Calculate time boundaries
+    val now = System.currentTimeMillis()
+    val calendar = Calendar.getInstance()
+    calendar.timeInMillis = now
+    calendar.add(Calendar.DAY_OF_YEAR, -daysBeforeNow)
+    calendar.set(Calendar.HOUR_OF_DAY, 0)
+    calendar.set(Calendar.MINUTE, 0)
+    calendar.set(Calendar.SECOND, 0)
+    val startTime = calendar.timeInMillis
     
     Row(
         modifier = modifier
             .fillMaxSize()
             .transformable(state = transformableState)
     ) {
-        // Left side: Time scale
-        VerticalTimeScale(
-            scrollState = scrollState,
-            hourHeightDp = hourHeightDp,
-            totalHours = totalHours,
-            daysBeforeNow = daysBeforeNow,
-            modifier = Modifier.width(70.dp)
-        )
+        // Left: Time scale
+        Column(
+            modifier = Modifier
+                .width(70.dp)
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .verticalScroll(scrollState)
+        ) {
+            val dateFormat = SimpleDateFormat("MM/dd", Locale.getDefault())
+            val hourFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            
+            repeat(totalHours) { hour ->
+                val timeMillis = startTime + hour * 3600 * 1000L
+                val isStartOfDay = hour % 24 == 0
+                val isCurrentHour = now in timeMillis until (timeMillis + 3600 * 1000L)
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(hourHeightDp)
+                        .background(
+                            if (isCurrentHour)
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            else
+                                Color.Transparent
+                        )
+                        .padding(horizontal = 4.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Column {
+                        if (isStartOfDay) {
+                            Text(
+                                text = dateFormat.format(Date(timeMillis)),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text = hourFormat.format(Date(timeMillis)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isCurrentHour)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
         
-        // Right side: Tasks
+        // Right: Tasks area
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
+                .verticalScroll(scrollState)
         ) {
-            // Background with time grid lines
-            VerticalTimelineBackground(
-                scrollState = scrollState,
-                hourHeightDp = hourHeightDp,
-                totalHours = totalHours,
-                daysBeforeNow = daysBeforeNow,
-                modifier = Modifier.fillMaxSize()
-            )
+            // Background grid
+            val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            val currentTimeColor = MaterialTheme.colorScheme.primary
             
-            // Task bars
-            Column(
+            Canvas(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 8.dp)
+                    .fillMaxWidth()
+                    .height(totalHeightDp)
             ) {
-                // Pre-calculate task positions
-                val now = System.currentTimeMillis()
-                val calendar = Calendar.getInstance()
-                calendar.timeInMillis = now
-                calendar.add(Calendar.DAY_OF_YEAR, -daysBeforeNow)
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                val startTime = calendar.timeInMillis
+                val hourHeightPxCanvas = size.height / totalHours
                 
-                // Sort tasks by start time
-                val sortedTasks = tasks.sortedBy { it.startTime ?: it.deadline ?: it.createdAt }
+                // Draw horizontal grid lines
+                repeat(totalHours + 1) { hour ->
+                    val y = hour * hourHeightPxCanvas
+                    val isDayStart = hour % 24 == 0
+                    
+                    drawLine(
+                        color = if (isDayStart) gridColor.copy(alpha = 0.5f) else gridColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = if (isDayStart) 2f else 1f
+                    )
+                }
                 
-                sortedTasks.forEach { task ->
-                    val taskStart = task.startTime ?: task.createdAt
-                    val taskEnd = task.deadline ?: (taskStart + 3600 * 1000L)
-                    
-                    val startOffsetHours = ((taskStart - startTime) / (3600 * 1000f)).coerceIn(0f, totalHours.toFloat())
-                    val durationHours = ((taskEnd - taskStart) / (3600 * 1000f)).coerceAtLeast(1f).coerceAtMost(24f)
-                    
-                    Spacer(modifier = Modifier.height(hourHeightDp * startOffsetHours))
-                    
+                // Draw current time indicator
+                val currentHourOffset = ((now - startTime) / (3600 * 1000f)) * hourHeightPxCanvas
+                if (currentHourOffset >= 0 && currentHourOffset <= size.height) {
+                    drawLine(
+                        color = currentTimeColor,
+                        start = Offset(0f, currentHourOffset),
+                        end = Offset(size.width, currentHourOffset),
+                        strokeWidth = 3f
+                    )
+                    drawCircle(
+                        color = currentTimeColor,
+                        radius = 8f,
+                        center = Offset(8f, currentHourOffset)
+                    )
+                }
+            }
+            
+            // Task bars using absolute positioning
+            tasks.sortedBy { it.startTime ?: it.deadline ?: it.createdAt }.forEach { task ->
+                val taskStart = task.startTime ?: task.createdAt
+                val taskEnd = task.deadline ?: (taskStart + 3600 * 1000L)
+                
+                val startOffsetHours = ((taskStart - startTime) / (3600 * 1000f)).coerceIn(0f, totalHours.toFloat())
+                val durationHours = ((taskEnd - taskStart) / (3600 * 1000f)).coerceAtLeast(1f).coerceAtMost(24f)
+                
+                val topOffset = hourHeightDp * startOffsetHours
+                val taskHeight = (hourHeightDp * durationHours).coerceAtLeast(48.dp)
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                        .offset(y = topOffset)
+                ) {
                     VerticalGanttTaskBar(
                         task = task,
-                        heightDp = hourHeightDp * durationHours,
+                        heightDp = taskHeight,
                         onClick = { onTaskClick(task.id) }
                     )
                 }
-                
-                // Bottom spacer
-                Spacer(modifier = Modifier.height(hourHeightDp * 24))
             }
-        }
-    }
-}
-
-/**
- * Vertical time scale on the left side
- */
-@Composable
-private fun VerticalTimeScale(
-    scrollState: androidx.compose.foundation.ScrollState,
-    hourHeightDp: Dp,
-    totalHours: Int,
-    daysBeforeNow: Int,
-    modifier: Modifier = Modifier
-) {
-    val now = System.currentTimeMillis()
-    val calendar = Calendar.getInstance()
-    calendar.timeInMillis = now
-    calendar.add(Calendar.DAY_OF_YEAR, -daysBeforeNow)
-    calendar.set(Calendar.HOUR_OF_DAY, 0)
-    calendar.set(Calendar.MINUTE, 0)
-    calendar.set(Calendar.SECOND, 0)
-    val startTime = calendar.timeInMillis
-    
-    val dateFormat = SimpleDateFormat("MM/dd", Locale.getDefault())
-    val hourFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .verticalScroll(scrollState)
-    ) {
-        repeat(totalHours) { hour ->
-            val timeMillis = startTime + hour * 3600 * 1000L
-            val isStartOfDay = hour % 24 == 0
-            val isCurrentHour = System.currentTimeMillis() in timeMillis until (timeMillis + 3600 * 1000L)
-            
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(hourHeightDp)
-                    .background(
-                        if (isCurrentHour)
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                        else
-                            Color.Transparent
-                    )
-                    .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Column {
-                    if (isStartOfDay) {
-                        Text(
-                            text = dateFormat.format(Date(timeMillis)),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Text(
-                        text = hourFormat.format(Date(timeMillis)),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isCurrentHour)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Background with horizontal grid lines and current time indicator
- */
-@Composable
-private fun VerticalTimelineBackground(
-    scrollState: androidx.compose.foundation.ScrollState,
-    hourHeightDp: Dp,
-    totalHours: Int,
-    daysBeforeNow: Int,
-    modifier: Modifier = Modifier
-) {
-    val now = System.currentTimeMillis()
-    val calendar = Calendar.getInstance()
-    calendar.timeInMillis = now
-    calendar.add(Calendar.DAY_OF_YEAR, -daysBeforeNow)
-    calendar.set(Calendar.HOUR_OF_DAY, 0)
-    calendar.set(Calendar.MINUTE, 0)
-    calendar.set(Calendar.SECOND, 0)
-    val startTime = calendar.timeInMillis
-    
-    val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-    val currentTimeColor = MaterialTheme.colorScheme.primary
-    val density = LocalDensity.current
-    val hourHeightPx = with(density) { hourHeightDp.toPx() }
-    
-    Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(hourHeightDp * totalHours)
-            .verticalScroll(scrollState)
-    ) {
-        // Draw horizontal grid lines
-        repeat(totalHours + 1) { hour ->
-            val y = hour * hourHeightPx
-            val isDayStart = hour % 24 == 0
-            
-            drawLine(
-                color = if (isDayStart) gridColor.copy(alpha = 0.5f) else gridColor,
-                start = Offset(0f, y),
-                end = Offset(size.width, y),
-                strokeWidth = if (isDayStart) 2f else 1f
-            )
-        }
-        
-        // Draw current time indicator (horizontal line)
-        val currentHourOffset = ((now - startTime) / (3600 * 1000f)) * hourHeightPx
-        if (currentHourOffset >= 0 && currentHourOffset <= size.height) {
-            // Current time line
-            drawLine(
-                color = currentTimeColor,
-                start = Offset(0f, currentHourOffset),
-                end = Offset(size.width, currentHourOffset),
-                strokeWidth = 3f
-            )
-            
-            // Current time dot at left
-            drawCircle(
-                color = currentTimeColor,
-                radius = 8f,
-                center = Offset(8f, currentHourOffset)
-            )
         }
     }
 }
@@ -339,7 +271,7 @@ private fun VerticalGanttTaskBar(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(heightDp.coerceAtLeast(48.dp))
+            .height(heightDp)
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (isPast)
@@ -367,10 +299,8 @@ private fun VerticalGanttTaskBar(
             
             Spacer(modifier = Modifier.width(8.dp))
             
-            // Task title and info
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            // Task info
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = task.title,
                     style = MaterialTheme.typography.bodyMedium,
@@ -383,7 +313,6 @@ private fun VerticalGanttTaskBar(
                     overflow = TextOverflow.Ellipsis
                 )
                 
-                // Show deadline if exists
                 task.deadline?.let { deadline ->
                     val timeFormat = SimpleDateFormat("MM/dd HH:mm", Locale.getDefault())
                     Text(
@@ -407,7 +336,7 @@ private fun VerticalGanttTaskBar(
                 )
             }
             
-            // Progress indicator
+            // Progress
             if (task.progress > 0 && task.progress < 1) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(

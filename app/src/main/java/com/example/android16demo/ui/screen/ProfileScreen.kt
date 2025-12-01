@@ -378,18 +378,22 @@ private fun AchievementProgressCard(
     statistics: TaskStatistics,
     modifier: Modifier = Modifier
 ) {
-    @Composable
-    fun achievementsList(): List<Triple<String, Int, Boolean>> {
-        return listOf(
-            Triple(stringResource(R.string.achievement_first_steps), 1, statistics.totalCompletedAllTime >= 1),
-            Triple(stringResource(R.string.achievement_getting_started), 10, statistics.totalCompletedAllTime >= 10),
-            Triple(stringResource(R.string.achievement_productive), 50, statistics.totalCompletedAllTime >= 50),
-            Triple(stringResource(R.string.achievement_master), 100, statistics.totalCompletedAllTime >= 100),
-            Triple(stringResource(R.string.achievement_legend), 500, statistics.totalCompletedAllTime >= 500)
+    // Get string resources outside the list
+    val firstSteps = stringResource(R.string.achievement_first_steps)
+    val gettingStarted = stringResource(R.string.achievement_getting_started)
+    val productive = stringResource(R.string.achievement_productive)
+    val master = stringResource(R.string.achievement_master)
+    val legend = stringResource(R.string.achievement_legend)
+    
+    val achievements = remember(statistics.totalCompletedAllTime) {
+        listOf(
+            Triple(firstSteps, 1, statistics.totalCompletedAllTime >= 1),
+            Triple(gettingStarted, 10, statistics.totalCompletedAllTime >= 10),
+            Triple(productive, 50, statistics.totalCompletedAllTime >= 50),
+            Triple(master, 100, statistics.totalCompletedAllTime >= 100),
+            Triple(legend, 500, statistics.totalCompletedAllTime >= 500)
         )
     }
-    
-    val achievements = achievementsList()
     
     Card(modifier = modifier.fillMaxWidth()) {
         Column(

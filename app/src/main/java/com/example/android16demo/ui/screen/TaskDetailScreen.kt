@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -51,8 +54,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -64,10 +65,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.android16demo.R
 import com.example.android16demo.data.entity.Task
 import com.example.android16demo.ui.theme.Android16DemoTheme
 import com.example.android16demo.viewmodel.TaskDetailUiState
@@ -117,210 +121,217 @@ fun TaskDetailScreen(
     
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(if (isEditMode) "Edit Task" else "Push New Task") 
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        if (uiState.isLoading) {
-            Column(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            // Header with status bar padding and back button
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Title
-                OutlinedTextField(
-                    value = uiState.title,
-                    onValueChange = onTitleChange,
-                    label = { Text("Title *") },
-                    placeholder = { Text("What needs to be done?") },
-                    isError = uiState.titleError != null,
-                    supportingText = uiState.titleError?.let { { Text(it) } },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                
-                // Description
-                OutlinedTextField(
-                    value = uiState.description,
-                    onValueChange = onDescriptionChange,
-                    label = { Text("Description") },
-                    placeholder = { Text("Add details...") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    maxLines = 5
-                )
-                
-                // Deadline picker with time
-                DateTimePickerField(
-                    label = "Deadline",
-                    selectedTimestamp = uiState.deadline,
-                    onTimestampSelected = onDeadlineChange,
-                    icon = Icons.Default.CalendarMonth,
-                    showTimePicker = true
-                )
-                
-                // Start time picker with time
-                DateTimePickerField(
-                    label = "Start Time",
-                    selectedTimestamp = uiState.startTime,
-                    onTimestampSelected = onStartTimeChange,
-                    icon = Icons.Default.Schedule,
-                    showTimePicker = true
-                )
-                
-                // Tags
-                Text(
-                    text = "Tags",
-                    style = MaterialTheme.typography.labelLarge
-                )
-                
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    uiState.tags.forEach { tag ->
-                        InputChip(
-                            selected = false,
-                            onClick = { },
-                            label = { Text(tag) },
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = { onRemoveTag(tag) },
-                                    modifier = Modifier.size(16.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Remove tag"
-                                    )
-                                }
-                            }
-                        )
-                    }
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.btn_back),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
                 }
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                Text(
+                    text = if (isEditMode) stringResource(R.string.title_edit_task) else stringResource(R.string.title_push_new_task),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Title
                     OutlinedTextField(
-                        value = tagInput,
-                        onValueChange = { tagInput = it },
-                        label = { Text("Add tag") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
+                        value = uiState.title,
+                        onValueChange = onTitleChange,
+                        label = { Text(stringResource(R.string.label_title)) },
+                        placeholder = { Text(stringResource(R.string.hint_title)) },
+                        isError = uiState.titleError != null,
+                        supportingText = uiState.titleError?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    
+                    // Description
+                    OutlinedTextField(
+                        value = uiState.description,
+                        onValueChange = onDescriptionChange,
+                        label = { Text(stringResource(R.string.label_description)) },
+                        placeholder = { Text(stringResource(R.string.hint_description)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        maxLines = 5
+                    )
+                    
+                    // Deadline picker with time
+                    DateTimePickerField(
+                        label = stringResource(R.string.label_deadline),
+                        selectedTimestamp = uiState.deadline,
+                        onTimestampSelected = onDeadlineChange,
+                        icon = Icons.Default.CalendarMonth,
+                        showTimePicker = true
+                    )
+                    
+                    // Start time picker with time
+                    DateTimePickerField(
+                        label = stringResource(R.string.label_start_time),
+                        selectedTimestamp = uiState.startTime,
+                        onTimestampSelected = onStartTimeChange,
+                        icon = Icons.Default.Schedule,
+                        showTimePicker = true
+                    )
+                    
+                    // Tags
+                    Text(
+                        text = stringResource(R.string.label_tags),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        uiState.tags.forEach { tag ->
+                            InputChip(
+                                selected = false,
+                                onClick = { },
+                                label = { Text(tag) },
+                                trailingIcon = {
+                                    IconButton(
+                                        onClick = { onRemoveTag(tag) },
+                                        modifier = Modifier.size(16.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.btn_delete)
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = tagInput,
+                            onValueChange = { tagInput = it },
+                            label = { Text(stringResource(R.string.hint_add_tag)) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    if (tagInput.isNotBlank()) {
+                                        onAddTag(tagInput.trim())
+                                        tagInput = ""
+                                        focusManager.clearFocus()
+                                    }
+                                }
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
                                 if (tagInput.isNotBlank()) {
                                     onAddTag(tagInput.trim())
                                     tagInput = ""
-                                    focusManager.clearFocus()
                                 }
                             }
-                        )
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = {
-                            if (tagInput.isNotBlank()) {
-                                onAddTag(tagInput.trim())
-                                tagInput = ""
-                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = stringResource(R.string.hint_add_tag)
+                            )
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add tag"
-                        )
                     }
-                }
-                
-                // Priority
-                Text(
-                    text = "Priority",
-                    style = MaterialTheme.typography.labelLarge
-                )
-                PrioritySelector(
-                    selectedPriority = uiState.priority,
-                    onPrioritySelected = onPriorityChange
-                )
-                
-                // Progress (only for edit mode)
-                if (isEditMode) {
+                    
+                    // Priority
                     Text(
-                        text = "Progress: ${(uiState.progress * 100).toInt()}%",
+                        text = stringResource(R.string.label_priority),
                         style = MaterialTheme.typography.labelLarge
                     )
-                    Slider(
-                        value = uiState.progress,
-                        onValueChange = onProgressChange,
-                        modifier = Modifier.fillMaxWidth()
+                    PrioritySelector(
+                        selectedPriority = uiState.priority,
+                        onPrioritySelected = onPriorityChange
                     )
-                }
-                
-                // Public toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
+                    
+                    // Progress (only for edit mode)
+                    if (isEditMode) {
                         Text(
-                            text = "Public Task",
+                            text = "${stringResource(R.string.label_progress)}: ${(uiState.progress * 100).toInt()}%",
                             style = MaterialTheme.typography.labelLarge
                         )
-                        Text(
-                            text = "Show on your public status page",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Slider(
+                            value = uiState.progress,
+                            onValueChange = onProgressChange,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
-                    Switch(
-                        checked = uiState.isPublic,
-                        onCheckedChange = onIsPublicChange
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Save button
-                Button(
-                    onClick = onSave,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isLoading
-                ) {
-                    Text(if (isEditMode) "Update Task" else "Push Task")
+                    
+                    // Public toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.label_public_task),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            Text(
+                                text = stringResource(R.string.public_task_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = uiState.isPublic,
+                            onCheckedChange = onIsPublicChange
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Save button
+                    Button(
+                        onClick = onSave,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !uiState.isLoading
+                    ) {
+                        Text(if (isEditMode) stringResource(R.string.btn_update_task) else stringResource(R.string.btn_push_task))
+                    }
                 }
             }
         }

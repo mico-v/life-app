@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,7 +37,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -45,8 +47,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,11 +62,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.android16demo.R
 import com.example.android16demo.ui.theme.Android16DemoTheme
 import com.example.android16demo.viewmodel.DayStats
 import com.example.android16demo.viewmodel.ProfileUiState
@@ -76,7 +78,6 @@ import com.example.android16demo.viewmodel.UserProfile
 /**
  * Profile Screen with statistics, user information, and customization
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreenContent(
     uiState: ProfileUiState,
@@ -99,86 +100,99 @@ fun ProfileScreenContent(
     
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
-                actions = {
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            // Header with status bar padding
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.title_profile),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Row {
                     IconButton(onClick = onRefresh) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh"
+                            contentDescription = stringResource(R.string.btn_refresh),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings"
+                            contentDescription = stringResource(R.string.nav_settings),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
-    ) { paddingValues ->
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // User Info Card with customization
-                item {
-                    UserInfoCard(
-                        userProfile = uiState.userProfile,
-                        onUpdateDisplayName = onUpdateDisplayName,
-                        onUpdateMotto = onUpdateMotto,
-                        onUpdateStatus = onUpdateStatus
-                    )
+            
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-                
-                // Status Card
-                item {
-                    StatusCard(status = uiState.userProfile.status)
-                }
-                
-                // Stats Overview
-                item {
-                    StatsOverviewCard(statistics = uiState.statistics)
-                }
-                
-                // Achievement Progress
-                item {
-                    AchievementProgressCard(statistics = uiState.statistics)
-                }
-                
-                // Weekly Chart
-                item {
-                    WeeklyChartCard(weeklyData = uiState.statistics.weeklyData)
-                }
-                
-                // Completion Rate
-                item {
-                    CompletionRateCard(completionRate = uiState.statistics.completionRate)
-                }
-                
-                // All-time stats
-                item {
-                    AllTimeStatsCard(totalCompleted = uiState.statistics.totalCompletedAllTime)
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // User Info Card with customization
+                    item {
+                        UserInfoCard(
+                            userProfile = uiState.userProfile,
+                            onUpdateDisplayName = onUpdateDisplayName,
+                            onUpdateMotto = onUpdateMotto,
+                            onUpdateStatus = onUpdateStatus
+                        )
+                    }
+                    
+                    // Status Card
+                    item {
+                        StatusCard(status = uiState.userProfile.status)
+                    }
+                    
+                    // Stats Overview
+                    item {
+                        StatsOverviewCard(statistics = uiState.statistics)
+                    }
+                    
+                    // Achievement Progress
+                    item {
+                        AchievementProgressCard(statistics = uiState.statistics)
+                    }
+                    
+                    // Weekly Chart
+                    item {
+                        WeeklyChartCard(weeklyData = uiState.statistics.weeklyData)
+                    }
+                    
+                    // Completion Rate
+                    item {
+                        CompletionRateCard(completionRate = uiState.statistics.completionRate)
+                    }
+                    
+                    // All-time stats
+                    item {
+                        AllTimeStatsCard(totalCompleted = uiState.statistics.totalCompletedAllTime)
+                    }
                 }
             }
         }
@@ -242,7 +256,7 @@ private fun UserInfoCard(
                         OutlinedTextField(
                             value = editName,
                             onValueChange = { editName = it },
-                            label = { Text("Display Name") },
+                            label = { Text(stringResource(R.string.label_display_name)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -260,7 +274,7 @@ private fun UserInfoCard(
                     }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit profile",
+                            contentDescription = stringResource(R.string.btn_edit),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
@@ -274,7 +288,7 @@ private fun UserInfoCard(
                 OutlinedTextField(
                     value = editMotto,
                     onValueChange = { editMotto = it },
-                    label = { Text("Personal Motto") },
+                    label = { Text(stringResource(R.string.label_motto)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -307,7 +321,7 @@ private fun UserInfoCard(
                         editMotto = userProfile.motto
                         isEditing = false
                     }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.btn_cancel))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
@@ -315,7 +329,7 @@ private fun UserInfoCard(
                         onUpdateMotto(editMotto)
                         isEditing = false
                     }) {
-                        Text("Save")
+                        Text(stringResource(R.string.btn_save))
                     }
                 }
             }
@@ -352,7 +366,7 @@ private fun StatusCard(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "Status: ",
+                text = stringResource(R.string.label_status) + ": ",
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
@@ -373,13 +387,22 @@ private fun AchievementProgressCard(
     statistics: TaskStatistics,
     modifier: Modifier = Modifier
 ) {
-    val achievements = listOf(
-        Triple("First Steps", 1, statistics.totalCompletedAllTime >= 1),
-        Triple("Getting Started", 10, statistics.totalCompletedAllTime >= 10),
-        Triple("Productive", 50, statistics.totalCompletedAllTime >= 50),
-        Triple("Master", 100, statistics.totalCompletedAllTime >= 100),
-        Triple("Legend", 500, statistics.totalCompletedAllTime >= 500)
-    )
+    // Get string resources outside the list
+    val firstSteps = stringResource(R.string.achievement_first_steps)
+    val gettingStarted = stringResource(R.string.achievement_getting_started)
+    val productive = stringResource(R.string.achievement_productive)
+    val master = stringResource(R.string.achievement_master)
+    val legend = stringResource(R.string.achievement_legend)
+    
+    val achievements = remember(statistics.totalCompletedAllTime) {
+        listOf(
+            Triple(firstSteps, 1, statistics.totalCompletedAllTime >= 1),
+            Triple(gettingStarted, 10, statistics.totalCompletedAllTime >= 10),
+            Triple(productive, 50, statistics.totalCompletedAllTime >= 50),
+            Triple(master, 100, statistics.totalCompletedAllTime >= 100),
+            Triple(legend, 500, statistics.totalCompletedAllTime >= 500)
+        )
+    }
     
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
@@ -397,7 +420,7 @@ private fun AchievementProgressCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Achievements",
+                    text = stringResource(R.string.title_achievements),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -425,7 +448,7 @@ private fun AchievementProgressCard(
                             color = if (achieved) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
                         )
                         Text(
-                            text = "Complete $target tasks",
+                            text = stringResource(R.string.achievement_complete_tasks, target),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -433,7 +456,7 @@ private fun AchievementProgressCard(
                     if (achieved) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Achieved",
+                            contentDescription = stringResource(R.string.completed),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -459,7 +482,7 @@ private fun StatsOverviewCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Statistics",
+                text = stringResource(R.string.title_statistics),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -472,19 +495,19 @@ private fun StatsOverviewCard(
                 StatItem(
                     icon = Icons.Default.CheckCircle,
                     value = statistics.completedToday.toString(),
-                    label = "Today",
+                    label = stringResource(R.string.stats_today),
                     color = MaterialTheme.colorScheme.primary
                 )
                 StatItem(
                     icon = Icons.Default.TrendingUp,
                     value = statistics.completedThisWeek.toString(),
-                    label = "This Week",
+                    label = stringResource(R.string.stats_this_week),
                     color = MaterialTheme.colorScheme.tertiary
                 )
                 StatItem(
                     icon = Icons.Default.Pending,
                     value = statistics.activeTasks.toString(),
-                    label = "Active",
+                    label = stringResource(R.string.stats_active),
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
@@ -543,7 +566,7 @@ private fun WeeklyChartCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Weekly Activity",
+                text = stringResource(R.string.title_weekly_activity),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -638,7 +661,7 @@ private fun CompletionRateCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "On-Time Completion Rate",
+                text = stringResource(R.string.title_completion_rate),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -660,7 +683,7 @@ private fun CompletionRateCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "on time",
+                        text = stringResource(R.string.label_on_time),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -686,7 +709,7 @@ private fun AllTimeStatsCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "All-Time Tasks Completed",
+                text = stringResource(R.string.title_all_time),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

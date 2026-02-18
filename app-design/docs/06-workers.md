@@ -311,8 +311,8 @@ companion object {
     fun schedulePeriodicSync(context: Context, intervalMinutes: Long = 30) {
         val syncPreferences = SyncPreferences(context)
         
-        // 只在启用自动同步且已登录时调度
-        if (!syncPreferences.autoSyncEnabled || !syncPreferences.isLoggedIn) {
+        // 只在启用自动同步且已完成服务端配置时调度
+        if (!syncPreferences.autoSyncEnabled || !syncPreferences.isSyncConfigured) {
             cancelPeriodicSync(context)
             return
         }
@@ -373,12 +373,11 @@ override suspend fun doWork(): Result {
         val app = context.applicationContext as? LifeApp ?: return Result.failure()
         val syncPreferences = SyncPreferences(context)
         
-        if (!syncPreferences.isLoggedIn) {
-            return Result.success()  // 未登录，静默成功
+        if (!syncPreferences.isSyncConfigured) {
+            return Result.success()  // 未配置服务端，静默成功
         }
         
         val syncRepository = SyncRepository(
-            api = RetrofitClient.api,
             taskRepository = app.taskRepository,
             syncPreferences = syncPreferences
         )
@@ -386,7 +385,7 @@ override suspend fun doWork(): Result {
         when (val result = syncRepository.syncTasks()) {
             is SyncRepository.SyncResult.Success -> Result.success()
             is SyncRepository.SyncResult.Error -> Result.retry()  // 错误时重试
-            SyncRepository.SyncResult.NotLoggedIn -> Result.success()
+            SyncRepository.SyncResult.NotConfigured -> Result.success()
         }
     } catch (e: Exception) {
         Result.retry()

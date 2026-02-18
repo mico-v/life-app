@@ -42,7 +42,7 @@
 - **中文支持** - 完整的中文界面本地化
 - **新同步机制** - 客户端自动生成 Token，服务端密码验证
 - **自适应图标** - Material Design 风格的栈式图标
-- **服务端** - Node.js + Express 服务器 + Material Design 3 Web 仪表盘
+- **服务端** - Cloudflare Worker（Hono）+ D1 + Material Design 3 Web 仪表盘
 
 ✅ **v2.1 新增功能（UI 优化）：**
 - **统一顶部状态栏** - 所有界面标题显示在应用顶部统一的 TopAppBar 中
@@ -123,7 +123,7 @@ MainActivity
         │   ├── 成就进度
         │   └── 设置入口
         ├── Settings Screen (设置)
-        │   ├── 账户管理 (登录/登出)
+        │   ├── 服务端连接配置（URL + 密码）
         │   ├── 服务器配置 (域名/IP:端口)
         │   ├── Push通知模板
         │   └── 同步设置
@@ -146,7 +146,7 @@ MainActivity
 | **Archive** | 已完成任务归档 | `ui/screen/ArchiveScreen.kt` |
 | **Task Detail** | 创建/编辑任务表单 | `ui/screen/TaskDetailScreen.kt` |
 | **Profile** | 用户信息、格言、状态、统计可视化、成就 | `ui/screen/ProfileScreen.kt` |
-| **Settings** | 服务器配置、Push模板、账户管理 | `ui/screen/SettingsScreen.kt` |
+| **Settings** | 服务器配置、Push模板、主题/语言、标签管理 | `ui/screen/SettingsScreen.kt` |
 
 ### Profile 页面功能
 - **用户信息卡片**: 可编辑显示名称和个人格言
@@ -157,7 +157,7 @@ MainActivity
 - **成就系统**: First Steps, Getting Started, Productive, Master, Legend
 
 ### Settings 页面功能
-- **账户管理**: 登录/登出功能
+- **服务端配置**: 设置服务端 URL 与服务器密码（用于同步鉴权）
 - **服务器配置**: 远端推送目标服务器设置（域名/IP:端口）
 - **Push 模板**: 默认/紧急/静默/摘要 四种通知模板
 - **同步设置**: 手动同步、自动同步、仅Wi-Fi同步
@@ -398,9 +398,9 @@ app/src/main/java/com/example/android16demo/
 服务端位于 `/Server/` 目录，提供数据同步和 Web 仪表盘功能。
 
 ### 技术栈
-- **运行时:** Node.js 18+
-- **框架:** Express.js
-- **数据库:** NeDB (嵌入式)
+- **运行时:** Cloudflare Workers Runtime
+- **框架:** Hono
+- **数据库:** Cloudflare D1 (SQLite)
 - **前端:** 原生 HTML/CSS/JS + Material Design 3
 
 ### 功能
@@ -411,7 +411,7 @@ app/src/main/java/com/example/android16demo/
 - 基于密码的简单认证机制
 
 ### 部署
-详见 [Server.md](/Server.md) 部署指南。
+详见 [Server/worker/README.md](../Server/worker/README.md) 部署指南。
 
 ---
 

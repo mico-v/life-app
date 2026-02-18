@@ -6,6 +6,15 @@ on:
       - main
     tags:
       - 'v*'
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/android_release.yml"
   workflow_dispatch:
 
 permissions:

@@ -9,5 +9,5 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "life-app-db"
-database_id = "REPLACE_WITH_REAL_D1_DATABASE_ID"
+database_id = "ee0d526f-3a06-4785-b3e8-840ab9db3a09"
 migrations_dir = "migrations"

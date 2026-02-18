@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.android16demo.data.repository.TaskRepository
 import com.example.android16demo.data.repository.TemplateRepository
 import com.example.android16demo.data.sync.SyncPreferences
+import com.example.android16demo.data.sync.SyncRepository
 
 /**
  * Factory for creating ViewModels with TaskRepository dependency
@@ -13,9 +14,10 @@ class ViewModelFactory(
     private val repository: TaskRepository,
     private val taskId: String? = null,
     private val syncPreferences: SyncPreferences? = null,
+    private val syncRepository: SyncRepository? = null,
     private val templateRepository: TemplateRepository? = null
 ) : ViewModelProvider.Factory {
-    
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
@@ -33,7 +35,8 @@ class ViewModelFactory(
             }
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
                 requireNotNull(syncPreferences) { "syncPreferences is required for SettingsViewModel" }
-                SettingsViewModel(syncPreferences, templateRepository) as T
+                requireNotNull(syncRepository) { "syncRepository is required for SettingsViewModel" }
+                SettingsViewModel(syncPreferences, syncRepository, templateRepository) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }

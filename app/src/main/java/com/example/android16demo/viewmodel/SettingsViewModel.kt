@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android16demo.data.repository.TemplateRepository
 import com.example.android16demo.data.sync.SyncPreferences
+import com.example.android16demo.data.sync.SyncRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,27 +33,22 @@ data class SettingsUiState(
     val isSyncConfigured: Boolean = false
 )
 
-/**
- * ViewModel for Settings screen
- */
 class SettingsViewModel(
     private val syncPreferences: SyncPreferences,
+    private val syncRepository: SyncRepository,
     private val templateRepository: TemplateRepository? = null
 ) : ViewModel() {
-    
+
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
-    
+
     init {
         loadSettings()
     }
-    
-    /**
-     * Load settings from preferences
-     */
+
     private fun loadSettings() {
         _uiState.value = SettingsUiState(
-            isLoggedIn = syncPreferences.isLoggedIn,
+            isLoggedIn = syncPreferences.isSyncConfigured,
             username = syncPreferences.username,
             lastSyncTime = syncPreferences.lastSyncTime,
             autoSyncEnabled = syncPreferences.autoSyncEnabled,
@@ -67,158 +63,106 @@ class SettingsViewModel(
             isSyncConfigured = syncPreferences.isSyncConfigured
         )
     }
-    
-    /**
-     * Login with username and password
-     */
+
     fun login(username: String, password: String) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoggingIn = true)
-                
-                // TODO: Implement actual authentication with server
-                // For now, simulate a login
-                kotlinx.coroutines.delay(1000)
-                
-                // Save credentials
-                syncPreferences.username = username
-                syncPreferences.userId = username
-                syncPreferences.authToken = "mock_token_$username"
-                
-                _uiState.value = _uiState.value.copy(
-                    isLoggingIn = false,
-                    isLoggedIn = true,
-                    username = username,
-                    successMessage = "Login successful"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoggingIn = false,
-                    errorMessage = e.message ?: "Login failed"
-                )
-            }
-        }
+        // legacy no-op: current protocol uses client-token + server-password.
+        syncPreferences.username = username
+        _uiState.value = _uiState.value.copy(
+            username = username,
+            successMessage = "Profile updated"
+        )
     }
-    
-    /**
-     * Logout and clear credentials
-     */
+
     fun logout() {
         syncPreferences.clearAuth()
         _uiState.value = _uiState.value.copy(
             isLoggedIn = false,
             username = null,
-            successMessage = "Logged out successfully"
+            successMessage = "Cleared local auth state"
         )
     }
-    
-    /**
-     * Sync data with server
-     */
+
     fun syncNow() {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isSyncing = true)
-                
-                // TODO: Implement actual sync with server
-                kotlinx.coroutines.delay(2000)
-                
-                val now = System.currentTimeMillis()
-                syncPreferences.lastSyncTime = now
-                
-                _uiState.value = _uiState.value.copy(
-                    isSyncing = false,
-                    lastSyncTime = now,
-                    successMessage = "Sync completed"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isSyncing = false,
-                    errorMessage = e.message ?: "Sync failed"
-                )
+            _uiState.value = _uiState.value.copy(isSyncing = true)
+            when (val result = syncRepository.syncTasks()) {
+                is SyncRepository.SyncResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSyncing = false,
+                        lastSyncTime = result.serverTime,
+                        successMessage = "Sync completed (${result.syncedCount})"
+                    )
+                }
+                is SyncRepository.SyncResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSyncing = false,
+                        errorMessage = result.message
+                    )
+                }
+                SyncRepository.SyncResult.NotConfigured -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSyncing = false,
+                        errorMessage = "Please configure server URL and password first"
+                    )
+                }
             }
         }
     }
-    
-    /**
-     * Toggle auto sync
-     */
+
     fun setAutoSync(enabled: Boolean) {
         syncPreferences.autoSyncEnabled = enabled
         _uiState.value = _uiState.value.copy(autoSyncEnabled = enabled)
     }
-    
-    /**
-     * Toggle wifi only sync
-     */
+
     fun setWifiOnly(enabled: Boolean) {
         syncPreferences.syncOnWifiOnly = enabled
         _uiState.value = _uiState.value.copy(syncOnWifiOnly = enabled)
     }
-    
-    /**
-     * Update server URL
-     */
+
     fun updateServerUrl(url: String) {
         syncPreferences.serverUrl = url
-        _uiState.value = _uiState.value.copy(serverUrl = url)
+        _uiState.value = _uiState.value.copy(
+            serverUrl = url,
+            isSyncConfigured = syncPreferences.isSyncConfigured,
+            isLoggedIn = syncPreferences.isSyncConfigured
+        )
     }
-    
-    /**
-     * Update server password
-     */
+
     fun updateServerPassword(password: String) {
         syncPreferences.serverPassword = password
-        _uiState.value = _uiState.value.copy(serverPassword = password)
+        _uiState.value = _uiState.value.copy(
+            serverPassword = password,
+            isSyncConfigured = syncPreferences.isSyncConfigured,
+            isLoggedIn = syncPreferences.isSyncConfigured
+        )
     }
-    
-    /**
-     * Update push template
-     */
+
     fun updatePushTemplate(templateId: String?) {
         syncPreferences.pushTemplateId = templateId
         _uiState.value = _uiState.value.copy(pushTemplateId = templateId)
     }
-    
-    /**
-     * Update theme mode
-     */
+
     fun updateThemeMode(mode: String) {
         syncPreferences.themeMode = mode
         _uiState.value = _uiState.value.copy(themeMode = mode)
     }
-    
-    /**
-     * Update language
-     */
+
     fun updateLanguage(language: String) {
         syncPreferences.language = language
         _uiState.value = _uiState.value.copy(language = language)
     }
-    
-    /**
-     * Add custom tag
-     */
+
     fun addCustomTag(tag: String) {
         syncPreferences.addCustomTag(tag)
         _uiState.value = _uiState.value.copy(customTags = syncPreferences.getCustomTagList())
     }
-    
-    /**
-     * Remove custom tag
-     */
+
     fun removeCustomTag(tag: String) {
         syncPreferences.removeCustomTag(tag)
         _uiState.value = _uiState.value.copy(customTags = syncPreferences.getCustomTagList())
     }
-    
-    /**
-     * Clear error/success messages
-     */
+
     fun clearMessages() {
-        _uiState.value = _uiState.value.copy(
-            errorMessage = null,
-            successMessage = null
-        )
+        _uiState.value = _uiState.value.copy(errorMessage = null, successMessage = null)
     }
 }

@@ -1,0 +1,13 @@
+name = "life-app-worker"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "../public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "life-app-db"
+database_id = "REPLACE_WITH_REAL_D1_DATABASE_ID"
+migrations_dir = "migrations"

@@ -405,6 +405,7 @@ fun LifeAppMain(
                     factory = ViewModelFactory(
                         repository = app.taskRepository,
                         syncPreferences = app.syncPreferences,
+                        syncRepository = app.syncRepository,
                         templateRepository = app.templateRepository
                     )
                 )

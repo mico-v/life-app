@@ -11,36 +11,54 @@ import java.util.concurrent.TimeUnit
  * Retrofit client configuration for Life App API
  */
 object RetrofitClient {
-    
-    private var baseUrl: String = LifeAppApi.BASE_URL
-    
+
+    private var currentBaseUrl: String = normalizeBaseUrl(LifeAppApi.BASE_URL)
+    private var retrofit: Retrofit? = null
+    private var api: LifeAppApi? = null
+
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
-    
+
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
-    
-    private val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+
+    @Synchronized
+    fun getApi(baseUrl: String? = null): LifeAppApi {
+        val targetBaseUrl = normalizeBaseUrl(baseUrl ?: currentBaseUrl)
+        if (api == null || retrofit == null || targetBaseUrl != currentBaseUrl) {
+            currentBaseUrl = targetBaseUrl
+            retrofit = Retrofit.Builder()
+                .baseUrl(currentBaseUrl)
+                .client(okHttpClient)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+            api = retrofit!!.create(LifeAppApi::class.java)
+        }
+        return api!!
     }
-    
-    val api: LifeAppApi by lazy {
-        retrofit.create(LifeAppApi::class.java)
-    }
-    
-    /**
-     * Update base URL (useful for testing or configuration)
-     */
+
+    @Synchronized
     fun setBaseUrl(url: String) {
-        baseUrl = url
+        val normalized = normalizeBaseUrl(url)
+        if (normalized != currentBaseUrl) {
+            currentBaseUrl = normalized
+            retrofit = null
+            api = null
+        }
+    }
+
+    private fun normalizeBaseUrl(url: String): String {
+        val trimmed = url.trim().ifEmpty { LifeAppApi.BASE_URL }
+        val withScheme = if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            trimmed
+        } else {
+            "https://$trimmed"
+        }
+        return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
     }
 }

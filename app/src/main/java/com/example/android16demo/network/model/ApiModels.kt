@@ -20,7 +20,8 @@ data class TaskDto(
     @SerializedName("completed_at") val completedAt: Long?,
     @SerializedName("progress") val progress: Float,
     @SerializedName("priority") val priority: Int,
-    @SerializedName("is_public") val isPublic: Boolean
+    @SerializedName("is_public") val isPublic: Boolean,
+    @SerializedName("tags") val tags: String?
 )
 
 /**
@@ -40,6 +41,25 @@ data class SyncResponse(
     @SerializedName("message") val message: String?,
     @SerializedName("server_time") val serverTime: Long,
     @SerializedName("updated_tasks") val updatedTasks: List<TaskDto>?
+)
+
+data class DashboardStats(
+    @SerializedName("totalPublicTasks") val totalPublicTasks: Int,
+    @SerializedName("activeTasks") val activeTasks: Int,
+    @SerializedName("overdueCount") val overdueCount: Int
+)
+
+data class PublicProfile(
+    @SerializedName("displayName") val displayName: String,
+    @SerializedName("motto") val motto: String,
+    @SerializedName("status") val status: String
+)
+
+data class DashboardResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("profiles") val profiles: List<PublicProfile>,
+    @SerializedName("publicTasks") val publicTasks: List<TaskDto>,
+    @SerializedName("stats") val stats: DashboardStats
 )
 
 /**

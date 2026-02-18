@@ -29,6 +29,7 @@
 - **服务器同步** - 基于密码认证的 RESTful API
 - **公开状态** - 通过 Web 仪表盘分享忙碌/空闲状态
 - **隐私控制** - 选择哪些任务公开显示
+- **Cloudflare 部署** - 使用 Worker + D1 承载 API 与公开仪表盘
 
 ## 🛠 技术栈
 
@@ -88,23 +89,24 @@ cd life-app
 - **[UI 层](app-design/docs/05-ui-layer.md)** - Compose UI 组件
 - **[后台任务](app-design/docs/06-workers.md)** - WorkManager 后台任务
 - **[桌面组件](app-design/docs/07-widget.md)** - 主屏幕小组件
-- **[服务端部署](Server.md)** - 服务器部署指南
+- **[轻量调试教程](app-design/docs/08-vscode-wsl-pixel-debug.md)** - VS Code + WSL + Pixel 真机调试
+- **[Worker 部署](Server/worker/README.md)** - Cloudflare Worker + D1 部署指南
 
 ## 🌐 服务端
 
-服务端位于 `/Server/` 目录，提供数据同步和 Web 仪表盘功能。
+服务端采用 Cloudflare Worker 部署，提供数据同步和 Web 仪表盘功能。
 
 ### 快速部署
 
 ```bash
-cd Server
-npm install
-cp .env.example .env
-# 编辑 .env 设置 SERVER_PASSWORD
-npm start
+cd Server/worker
+corepack enable
+pnpm install
+pnpm run db:migrate:remote
+pnpm run deploy
 ```
 
-详细部署指南请参阅 [Server.md](Server.md)。
+详细部署指南请参阅 [Server/worker/README.md](Server/worker/README.md)。
 
 ## 📁 项目结构
 

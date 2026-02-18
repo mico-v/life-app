@@ -3,18 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:migrate": "wrangler d1 migrations apply DB --local",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
-    "release": "npm run db:migrate:remote && npm run deploy"
+    "release": "pnpm run db:migrate:remote && pnpm run deploy"
   },
   "dependencies": {
     "hono": "^4.6.10"
   },
   "devDependencies": {
-    "wrangler": "^3.86.1"
+    "wrangler": "^4.66.0"
   }
 }

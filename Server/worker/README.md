@@ -9,7 +9,8 @@ This directory supports:
 
 ```bash
 cd Server/worker
-npm install
+corepack enable
+pnpm install
 ```
 
 ## 2) One-time initialization
@@ -19,7 +20,7 @@ If you already created the Worker and D1 once, skip creation and keep using the 
 Create D1 (first time only):
 
 ```bash
-npx wrangler d1 create life-app-db
+pnpm dlx wrangler d1 create life-app-db
 ```
 
 Copy generated `database_id` into `wrangler.toml`:
@@ -29,19 +30,19 @@ Copy generated `database_id` into `wrangler.toml`:
 Configure runtime secret (first time or rotation):
 
 ```bash
-npx wrangler secret put SERVER_PASSWORD
+pnpm dlx wrangler secret put SERVER_PASSWORD
 ```
 
 ## 3) Local development
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Local D1 migration (for dev):
 
 ```bash
-npm run db:migrate:local
+pnpm run db:migrate:local
 ```
 
 ## 4) Manual production release
@@ -49,14 +50,14 @@ npm run db:migrate:local
 This runs remote D1 migrations first, then deploys Worker:
 
 ```bash
-npm run release
+pnpm run release
 ```
 
 You can still run steps manually:
 
 ```bash
-npm run db:migrate:remote
-npm run deploy
+pnpm run db:migrate:remote
+pnpm run deploy
 ```
 
 ## 5) GitHub Actions auto deploy
@@ -77,3 +78,4 @@ Token scope should include permissions for Workers and D1 on your Cloudflare acc
 
 - D1 migrations are incremental; only new migration files are applied remotely.
 - Static assets in `Server/public` and API routes under `/api/v1/*` are served by the same Worker.
+- Commit `Server/worker/pnpm-lock.yaml` after first `pnpm install` so CI can switch to frozen installs.

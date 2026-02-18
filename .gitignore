@@ -89,9 +89,15 @@ lint/tmp/
 
 # Server dependencies
 Server/node_modules/
+Server/worker/node_modules/
 
 # Server environment files
 Server/.env
+Server/worker/.dev.vars
+Server/worker/.env
 
 # Server database files (data is local)
 Server/data/*.db
+
+# Cloudflare Wrangler local state/cache
+Server/worker/.wrangler/

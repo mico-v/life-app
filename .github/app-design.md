@@ -53,13 +53,16 @@ Treat life tasks as a computing stack/queue.
 - **Networking**: Retrofit (Sync to Server).
 - **Background Work**: WorkManager (for DDL notifications and background sync).
 
-### Backend (Server) - *To Be Developed*
-- **Tech Stack**: Lightweight (e.g., Python FastAPI or Node.js Express).
-- **Database**: Simple SQL (SQLite/PostgreSQL).
+### Backend (Server) - Implemented
+- **Runtime**: Cloudflare Workers (`Server/worker`).
+- **Database**: Cloudflare D1 (binding: `DB`).
 - **API**:
-    - `POST /sync`: Receive tasks/status from App.
-    - `GET /status/{user}`: Public view data.
-- **Frontend**: Simple React or static HTML/JS page.
+    - `POST /api/v1/sync`: Receive task/profile updates from App.
+    - `GET /api/v1/tasks`: Get client tasks.
+    - `GET /api/v1/profile`: Get profile and stats.
+    - `GET /api/v1/public/dashboard`: Public dashboard data.
+- **Frontend**: Static assets from `Server/public`, served by the same Worker.
+- **Deployment**: GitHub Actions workflow `.github/workflows/worker_deploy.yml`.
 
 ## 4. Data Model (Draft)
 
@@ -89,5 +92,5 @@ data class Task(
 ## 6. Development Phases
 - **Phase 1 (MVP)**: Local Push/Pop, List View, Room DB.
 - **Phase 2 (Visuals)**: Timeline UI, DDL Reminders, Progress.
-- **Phase 3 (Web)**: Server setup, Sync logic, Public Status Page.
+- **Phase 3 (Web)**: Worker + D1 API and Public Status Page.
 - **Phase 4 (Polish)**: Templates, Stats, Animations.

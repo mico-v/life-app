@@ -37,9 +37,10 @@ jobs:
         with:
           node-version: "20"
           cache: "pnpm"
+          cache-dependency-path: "Server/worker/pnpm-lock.yaml"
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Apply D1 migrations (remote)
         run: pnpm run db:migrate:remote

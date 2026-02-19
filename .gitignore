@@ -101,3 +101,7 @@ Server/data/*.db
 
 # Cloudflare Wrangler local state/cache
 Server/worker/.wrangler/
+
+# Android signing artifacts
+app/release.jks
+app/release.jks.b64

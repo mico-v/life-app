@@ -1,104 +1,81 @@
 package com.example.android16demo.network.model
 
 import com.google.gson.annotations.SerializedName
+import com.google.gson.JsonElement
 
 /**
  * Data Transfer Objects for API communication
  */
 
-/**
- * Task DTO for syncing with server
- */
-data class TaskDto(
+data class PostDtoV2(
     @SerializedName("id") val id: String,
-    @SerializedName("title") val title: String,
-    @SerializedName("description") val description: String?,
-    @SerializedName("created_at") val createdAt: Long,
-    @SerializedName("start_time") val startTime: Long?,
-    @SerializedName("deadline") val deadline: Long?,
-    @SerializedName("is_completed") val isCompleted: Boolean,
-    @SerializedName("completed_at") val completedAt: Long?,
-    @SerializedName("progress") val progress: Float,
-    @SerializedName("priority") val priority: Int,
-    @SerializedName("is_public") val isPublic: Boolean,
-    @SerializedName("tags") val tags: String?
+    @SerializedName("content") val content: String,
+    @SerializedName("tags") val tags: String?,
+    @SerializedName("location") val location: String?,
+    @SerializedName("visibility") val visibility: String?,
+    @SerializedName("created_at") val createdAt: Long?,
+    @SerializedName("updated_at") val updatedAt: Long?
 )
 
-/**
- * Request body for sync endpoint
- */
-data class SyncRequest(
-    @SerializedName("user_id") val userId: String,
-    @SerializedName("tasks") val tasks: List<TaskDto>,
-    @SerializedName("last_sync") val lastSync: Long?
+data class StatusSourceDto(
+    @SerializedName("source") val source: String,
+    @SerializedName("status") val status: String,
+    @SerializedName("observed_at") val observedAt: Long?,
+    @SerializedName("expires_at") val expiresAt: Long?,
+    @SerializedName("meta") val meta: JsonElement?
 )
 
-/**
- * Response from sync endpoint
- */
-data class SyncResponse(
+data class FeedStatusDto(
+    @SerializedName("primary") val primary: StatusSourceDto,
+    @SerializedName("sources") val sources: List<StatusSourceDto>,
+    @SerializedName("offline") val offline: Boolean
+)
+
+data class FeedStatsDto(
+    @SerializedName("totalPosts") val totalPosts: Int,
+    @SerializedName("activeSources") val activeSources: Int
+)
+
+data class PublicFeedResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("status") val status: FeedStatusDto,
+    @SerializedName("posts") val posts: List<PostDtoV2>,
+    @SerializedName("stats") val stats: FeedStatsDto,
+    @SerializedName("server_time") val serverTime: Long
+)
+
+data class StatusEventRequest(
+    @SerializedName("source") val source: String,
+    @SerializedName("status") val status: String,
+    @SerializedName("observed_at") val observedAt: Long,
+    @SerializedName("expires_at") val expiresAt: Long,
+    @SerializedName("meta") val meta: Map<String, Any>? = null
+)
+
+data class CreatePostRequest(
+    @SerializedName("content") val content: String,
+    @SerializedName("tags") val tags: String? = null,
+    @SerializedName("location") val location: String? = null
+)
+
+data class StatusEventResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String?,
-    @SerializedName("server_time") val serverTime: Long,
-    @SerializedName("updated_tasks") val updatedTasks: List<TaskDto>?
+    @SerializedName("source_status") val sourceStatus: StatusSourceDto?
 )
 
-data class DashboardStats(
-    @SerializedName("totalPublicTasks") val totalPublicTasks: Int,
-    @SerializedName("activeTasks") val activeTasks: Int,
-    @SerializedName("overdueCount") val overdueCount: Int
-)
-
-data class PublicProfile(
-    @SerializedName("displayName") val displayName: String,
-    @SerializedName("motto") val motto: String,
-    @SerializedName("status") val status: String
-)
-
-data class DashboardResponse(
+data class CreatePostResponse(
     @SerializedName("success") val success: Boolean,
-    @SerializedName("profiles") val profiles: List<PublicProfile>,
-    @SerializedName("publicTasks") val publicTasks: List<TaskDto>,
-    @SerializedName("stats") val stats: DashboardStats
+    @SerializedName("message") val message: String?,
+    @SerializedName("post") val post: PostDtoV2?
 )
 
-/**
- * User status response for public profile
- */
-data class UserStatusResponse(
-    @SerializedName("user_id") val userId: String,
-    @SerializedName("username") val username: String,
-    @SerializedName("status") val status: String, // "BUSY" or "FREE"
-    @SerializedName("current_task") val currentTask: String?,
-    @SerializedName("public_tasks") val publicTasks: List<TaskDto>,
-    @SerializedName("stats") val stats: UserStats?
-)
-
-/**
- * User statistics
- */
-data class UserStats(
-    @SerializedName("completed_today") val completedToday: Int,
-    @SerializedName("completed_this_week") val completedThisWeek: Int,
-    @SerializedName("active_tasks") val activeTasks: Int,
-    @SerializedName("total_focus_hours") val totalFocusHours: Float?
-)
-
-/**
- * Authentication request
- */
-data class AuthRequest(
-    @SerializedName("username") val username: String,
-    @SerializedName("password") val password: String
-)
-
-/**
- * Authentication response
- */
-data class AuthResponse(
+data class PostsResponse(
     @SerializedName("success") val success: Boolean,
-    @SerializedName("token") val token: String?,
-    @SerializedName("user_id") val userId: String?,
-    @SerializedName("username") val username: String?,
-    @SerializedName("error") val error: String?
+    @SerializedName("posts") val posts: List<PostDtoV2>
+)
+
+data class ApiMessageResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String?
 )

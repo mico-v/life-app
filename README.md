@@ -76,6 +76,33 @@ cd life-app
 ./gradlew installDebug
 ```
 
+### GitHub Action Signed Release
+
+Use one fixed keystore forever to keep app signature consistent across releases.
+
+```bash
+# 1) Generate signing keystore + base64 (one-time)
+chmod +x scripts/android_signing_setup.sh
+./scripts/android_signing_setup.sh
+```
+
+Set these repository secrets in GitHub:
+- `ANDROID_KEYSTORE_BASE64` (content of `app/release.jks.b64`)
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+Workflow behavior:
+- Push to `main`: compile debug APK (`assembleDebug`) for CI verification.
+- Tag `v*` (for example `v1.0.0`): build signed release APK and publish GitHub Release.
+- Manual `workflow_dispatch`: run signed release build on demand.
+
+```bash
+# 2) Trigger release build by tag
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## 📖 Documentation
 
 For detailed project documentation, see:

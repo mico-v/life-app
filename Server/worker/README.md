@@ -1,11 +1,8 @@
-# Life App Cloudflare Worker Deployment
+# Life App Worker (Cloudflare)
 
-This directory supports:
-- Local preview with `wrangler dev`
-- One-command release (D1 migration + Worker deploy)
-- GitHub Actions auto deploy on `main`
+Cloudflare Worker + D1 backend for Life App status/post stream.
 
-## 1) Install
+## 1. Install
 
 ```bash
 cd Server/worker
@@ -13,105 +10,86 @@ corepack enable
 pnpm install
 ```
 
-## 2) One-time initialization
+## 2. Configure
 
-If you already created the Worker and D1 once, skip creation and keep using the same config.
+### D1 database
 
-Create D1 (first time only):
+First time only:
 
 ```bash
 pnpm dlx wrangler d1 create life-app-db
 ```
 
-Copy generated `database_id` into `wrangler.toml`:
-- `name` should stay your existing worker name
-- `database_id` should stay your existing D1 id
+Put `database_id` into `wrangler.toml`.
 
-Configure runtime secret (first time or rotation):
+### Secrets
+
+Required:
+- `SERVER_PASSWORD`
+
+Optional:
+- `DEFAULT_STATUS_TTL_MS` (default `900000`)
+
+Set secret:
 
 ```bash
 pnpm dlx wrangler secret put SERVER_PASSWORD
 ```
 
-## 3) Local development
-
-```bash
-pnpm run dev
-```
-
-Local D1 migration (for dev):
+## 3. Local Development
 
 ```bash
 pnpm run db:migrate:local
+pnpm run dev
 ```
 
-## 4) Manual production release
+## 4. Deploy
 
-This runs remote D1 migrations first, then deploys Worker:
-
-```bash
-pnpm run release
-```
-
-You can still run steps manually:
+Manual release:
 
 ```bash
 pnpm run db:migrate:remote
 pnpm run deploy
 ```
 
-## 5) GitHub Actions auto deploy
-
-Workflow file: `.github/workflows/worker_deploy.yml`
-
-Trigger:
-- Push to `main` when files under `Server/worker/**` or `Server/public/**` change
-- Manual run (`workflow_dispatch`)
-
-Required GitHub repository secrets:
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-
-Token scope should include permissions for Workers and D1 on your Cloudflare account.
-
-## Notes
-
-- D1 migrations are incremental; only new migration files are applied remotely.
-- Static assets in `Server/public` and API routes under `/api/v1/*` are served by the same Worker.
-- Commit `Server/worker/pnpm-lock.yaml` after first `pnpm install` so CI can switch to frozen installs.
-
-## V1.1: Status Feed APIs
-
-### New D1 migrations
-
-- `migrations/0002_posts.sql`
-- `migrations/0003_status.sql`
-
-Apply locally:
+or
 
 ```bash
-pnpm run db:migrate:local
+pnpm run release
 ```
 
-Apply remotely:
+## 5. API Overview
 
-```bash
-pnpm run db:migrate:remote
-```
-
-### Required/optional secrets
-
-- Required:
-  - `SERVER_PASSWORD`
-- Optional:
-  - `DEFAULT_STATUS_TTL_MS` (default: `900000`)
-
-### New endpoints
-
+### Auth required (`x-client-token`, `x-server-password`)
+- `POST /api/v1/status/events`
+- `GET /api/v1/status`
 - `POST /api/v1/posts`
 - `PUT /api/v1/posts/:postId`
 - `DELETE /api/v1/posts/:postId`
 - `GET /api/v1/posts`
-- `POST /api/v1/status/events`
-- `GET /api/v1/status`
+
+### Public
 - `GET /api/v1/public/feed`
+- `GET /api/v1/health`
+
+### Compatibility
+Old task APIs are still present for transition:
+- `POST /api/v1/sync`
+- `GET /api/v1/tasks`
+
+## 6. Status Rules
+
+- If `expires_at` is not provided, backend uses `observed_at + DEFAULT_STATUS_TTL_MS`.
+- Valid status means `expires_at > now`.
+- Primary status selection:
+  1. latest valid `manual`
+  2. else latest valid from other sources
+  3. else `Offline`
+
+## 7. Migrations
+
+- `migrations/0001_init.sql` (legacy task/profile base)
+- `migrations/0002_posts.sql`
+- `migrations/0003_status.sql`
+
+Apply migrations before deploy.

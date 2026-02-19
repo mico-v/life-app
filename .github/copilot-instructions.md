@@ -1,52 +1,61 @@
 # Copilot Instructions for life-app
 
-This is an Android project built with Kotlin and Jetpack Compose. Follow these guidelines to ensure code consistency and effective integration.
+## 1. Product Direction
 
-## 1. Project Architecture & Tech Stack
+This repo is a **status-first personal project**.
+Do not generate new task-management flows unless explicitly requested.
 
-- **Type**: Native Android Application (Single Activity).
-- **Language**: Kotlin (exclusively).
-- **UI Framework**: Jetpack Compose (Material 3). **Do not use XML layouts** for UI unless absolutely necessary (e.g., complex drawables).
-- **Build System**: Gradle with Kotlin DSL (`.kts`).
-- **Dependency Management**: Version Catalog (`gradle/libs.versions.toml`).
+Primary app surfaces are:
+- `Status`
+- `Profile`
+- `Publish`
 
-## 2. Key Conventions & Patterns
+## 2. Stack
+
+- Android app: Kotlin + Jetpack Compose + Material 3
+- Backend: Cloudflare Worker + D1
+- Build: Gradle Kotlin DSL + version catalog
+
+## 3. Coding Conventions
 
 ### UI & Navigation
-- **Screens**: Define screens as top-level Composable functions (e.g., `HomeScreen`, `SettingsScreen`).
-- **Navigation**: Use `androidx.navigation.compose`.
-  - Define routes using a sealed class (e.g., `sealed class Screen(val route: String)`).
-  - Host navigation in `MainActivity` or a dedicated `AppNavigation` composable.
-- **Theming**: Use Material 3. Support dynamic colors (Android 12+) via `dynamicDarkColorScheme` / `dynamicLightColorScheme`.
-- **Previews**: Always include `@Preview` composables for UI components to facilitate design iteration.
+- Use `androidx.navigation.compose`.
+- Keep routes aligned with `MainActivity.kt`.
+- Prefer Compose-only UI (no XML layout additions unless required).
 
-### Dependency Management
-- **Adding Libraries**:
-  1.  Define the version in `[versions]` block of `gradle/libs.versions.toml`.
-  2.  Define the library in `[libraries]` block of `gradle/libs.versions.toml`.
-  3.  Reference the library in `app/build.gradle.kts` using `libs.name.of.lib`.
-  - **Do not** hardcode versions or dependencies directly in `build.gradle.kts`.
+### Dependencies
+- Add versions and libraries through `gradle/libs.versions.toml`.
+- Do not hardcode dependency versions in `app/build.gradle.kts`.
 
-### Code Style
-- **Kotlin**: Follow official Kotlin coding conventions.
-- **Composables**: Use PascalCase for Composable functions. Functions that return `Unit` should be named as nouns/adjectives (e.g., `MainScreen`).
-- **State Management**: Use `remember` and `mutableStateOf` for local state. Hoist state to callers when possible.
+### State
+- Local UI state: Compose state/StateFlow
+- Network/domain state: ViewModel + repository
 
-## 3. Critical Files & Directories
+## 4. Critical Paths
 
-- `app/src/main/java/com/example/android16demo/MainActivity.kt`: Entry point, Navigation Host, and main UI scaffold.
-- `gradle/libs.versions.toml`: Central source of truth for dependencies and versions.
-- `app/build.gradle.kts`: Module-level build configuration.
-- `app/src/main/java/com/example/android16demo/ui/theme/`: Theme definitions (Color, Type, Theme).
+- App entry/navigation:
+  - `app/src/main/java/com/example/android16demo/LifeApp.kt`
+  - `app/src/main/java/com/example/android16demo/MainActivity.kt`
+- Data/network:
+  - `app/src/main/java/com/example/android16demo/data/repository/WebRepository.kt`
+  - `app/src/main/java/com/example/android16demo/network/api/LifeAppApi.kt`
+  - `app/src/main/java/com/example/android16demo/network/model/ApiModels.kt`
+- Web/worker:
+  - `Server/public/*`
+  - `Server/worker/src/index.js`
 
-## 4. Build & Test Commands
+## 5. Build/Test Commands
 
-- **Build Debug APK**: `./gradlew assembleDebug`
-- **Run Unit Tests**: `./gradlew test`
-- **Run Instrumented Tests**: `./gradlew connectedAndroidTest`
-- **Lint Check**: `./gradlew lint`
+```bash
+./gradlew :app:assembleDebug
+./gradlew test
+./gradlew lint
+```
 
-## 5. Common Tasks
+Worker local:
 
-- **New Screen**: Create a new Composable file, add a route to the `Screen` sealed class, and add a `composable()` entry in the `NavHost`.
-- **New Dependency**: Update `libs.versions.toml` first, then sync Gradle.
+```bash
+cd Server/worker
+pnpm run db:migrate:local
+pnpm run dev
+```

@@ -1,189 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Life App - Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Life App - Status Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Navigation Rail -->
-        <nav class="nav-rail">
-            <div class="nav-rail-header">
-                <div class="app-icon">
-                    <span class="material-icons">layers</span>
-                </div>
-            </div>
-            <div class="nav-rail-items">
-                <button class="nav-item active" data-page="dashboard">
-                    <span class="material-icons">dashboard</span>
-                    <span class="nav-label">仪表盘</span>
-                </button>
-                <button class="nav-item" data-page="tasks">
-                    <span class="material-icons">task_alt</span>
-                    <span class="nav-label">任务</span>
-                </button>
-                <button class="nav-item" data-page="timeline">
-                    <span class="material-icons">timeline</span>
-                    <span class="nav-label">时间轴</span>
-                </button>
-                <button class="nav-item" data-page="profile">
-                    <span class="material-icons">person</span>
-                    <span class="nav-label">个人</span>
-                </button>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Top App Bar -->
-            <header class="top-app-bar">
-                <h1 class="page-title">Life App</h1>
-                <div class="subtitle">入栈开始，出栈完成</div>
-            </header>
-
-            <!-- Dashboard Page -->
-            <section id="dashboard-page" class="page active">
-                <div class="stats-grid">
-                    <div class="stat-card primary">
-                        <span class="material-icons">pending_actions</span>
-                        <div class="stat-value" id="active-count">0</div>
-                        <div class="stat-label">进行中</div>
-                    </div>
-                    <div class="stat-card secondary">
-                        <span class="material-icons">check_circle</span>
-                        <div class="stat-value" id="completed-count">0</div>
-                        <div class="stat-label">已完成</div>
-                    </div>
-                    <div class="stat-card tertiary">
-                        <span class="material-icons">warning</span>
-                        <div class="stat-value" id="overdue-count">0</div>
-                        <div class="stat-label">已逾期</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h2 class="card-title">公开任务</h2>
-                    <div class="task-list" id="public-tasks">
-                        <div class="empty-state">
-                            <span class="material-icons">inbox</span>
-                            <p>暂无公开任务</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h2 class="card-title">用户状态</h2>
-                    <div class="profile-list" id="profiles">
-                        <div class="empty-state">
-                            <span class="material-icons">people</span>
-                            <p>暂无用户</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tasks Page -->
-            <section id="tasks-page" class="page">
-                <div class="card">
-                    <h2 class="card-title">所有任务</h2>
-                    <div class="filter-chips" id="tag-filters">
-                        <button class="chip active" data-tag="">全部</button>
-                    </div>
-                    <div class="task-list" id="all-tasks">
-                        <div class="empty-state">
-                            <span class="material-icons">task</span>
-                            <p>暂无任务</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Timeline Page -->
-            <section id="timeline-page" class="page">
-                <div class="timeline-container">
-                    <div class="timeline-section overdue">
-                        <h3 class="timeline-header">
-                            <span class="material-icons">error</span>
-                            已逾期
-                        </h3>
-                        <div class="timeline-tasks" id="overdue-tasks"></div>
-                    </div>
-                    <div class="timeline-section today">
-                        <h3 class="timeline-header">
-                            <span class="material-icons">today</span>
-                            今天
-                        </h3>
-                        <div class="timeline-tasks" id="today-tasks"></div>
-                    </div>
-                    <div class="timeline-section tomorrow">
-                        <h3 class="timeline-header">
-                            <span class="material-icons">event</span>
-                            明天
-                        </h3>
-                        <div class="timeline-tasks" id="tomorrow-tasks"></div>
-                    </div>
-                    <div class="timeline-section this-week">
-                        <h3 class="timeline-header">
-                            <span class="material-icons">date_range</span>
-                            本周
-                        </h3>
-                        <div class="timeline-tasks" id="week-tasks"></div>
-                    </div>
-                    <div class="timeline-section later">
-                        <h3 class="timeline-header">
-                            <span class="material-icons">schedule</span>
-                            以后
-                        </h3>
-                        <div class="timeline-tasks" id="later-tasks"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Profile Page -->
-            <section id="profile-page" class="page">
-                <div class="profile-card">
-                    <div class="profile-avatar">
-                        <span class="material-icons">person</span>
-                    </div>
-                    <div class="profile-info">
-                        <h2 id="profile-name">Life App User</h2>
-                        <p class="motto" id="profile-motto">"入栈开始，出栈完成"</p>
-                        <div class="status-badge" id="profile-status">
-                            <span class="status-dot"></span>
-                            空闲
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="stats-grid profile-stats">
-                    <div class="stat-card">
-                        <div class="stat-value" id="profile-active">0</div>
-                        <div class="stat-label">进行中</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="profile-completed">0</div>
-                        <div class="stat-label">已完成</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="profile-today">0</div>
-                        <div class="stat-label">今日完成</div>
-                    </div>
-                </div>
-            </section>
-        </main>
+  <div class="ambient"></div>
+  <header class="site-header">
+    <div class="brand">
+      <span class="material-icons">monitor_heart</span>
+      <strong id="brand-name">Life App</strong>
     </div>
+    <nav class="main-nav">
+      <a class="tab" href="/">详情</a>
+      <a class="tab" href="/?view=publish">发布</a>
+    </nav>
+  </header>
 
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loading">
-        <div class="loading-spinner"></div>
-    </div>
+  <main class="container">
+    <section id="feed-view" class="view">
+      <div class="feed-grid">
+        <div class="main-col">
+          <div class="panel intro-panel">
+            <h1 id="headline">看看 Life App User 在干什么 O.O</h1>
+            <p id="motto">实时状态与帖子流</p>
+          </div>
 
-    <script src="app.js"></script>
+          <div class="panel status-hero">
+            <div class="panel-head">
+              <h2 id="title-primary-status">当前主状态</h2>
+              <span id="last-updated" class="muted">-</span>
+            </div>
+            <div id="primary-status-text" class="big-status">Offline</div>
+            <p id="primary-status-meta" class="muted">source: system</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="title-source-status">来源状态</h2>
+              <span class="chip">manual 优先</span>
+            </div>
+            <div id="source-status-list" class="status-grid"></div>
+          </div>
+
+          <div class="panel">
+            <h2 id="title-posts">最新帖子</h2>
+            <div id="posts-list" class="posts-list"></div>
+          </div>
+        </div>
+
+        <aside class="side-col">
+          <div class="panel profile-panel">
+            <div class="avatar">L</div>
+            <div>
+              <h3 id="profile-name">Life App User</h3>
+              <p id="profile-motto" class="muted">Push to Start, Pop to Finish</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3 id="title-stats">状态概览</h3>
+            <div class="kv">
+              <span id="label-post-count">帖子数</span>
+              <strong id="stat-post-count">0</strong>
+            </div>
+            <div class="kv">
+              <span id="label-source-count">激活来源</span>
+              <strong id="stat-source-count">0</strong>
+            </div>
+            <div class="kv">
+              <span id="label-primary-status">主状态</span>
+              <strong id="stat-primary">Offline</strong>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3 id="title-links">外部链接</h3>
+            <div id="external-links"></div>
+          </div>
+
+        </aside>
+      </div>
+    </section>
+
+    <section id="publish-view" class="view hidden">
+      <div class="panel">
+        <h2>鉴权</h2>
+        <div class="field-grid">
+          <label>Client Token<input id="auth-client-token" type="text" placeholder="your-client-token"></label>
+          <label>Server Password<input id="auth-server-password" type="password" placeholder="server password"></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>发布手动状态</h2>
+        <div class="field-grid">
+          <label>状态字符串<input id="status-text" type="text" placeholder="Coding / Reading / Away"></label>
+          <label>过期分钟数<input id="status-ttl" type="number" min="1" value="15"></label>
+        </div>
+        <label>Meta(JSON, 可选)<textarea id="status-meta" rows="3" placeholder='{"scene":"focus"}'></textarea></label>
+        <button id="publish-status" class="btn">发布状态</button>
+      </div>
+
+      <div class="panel">
+        <h2>发布帖子</h2>
+        <label>内容<textarea id="post-content" rows="4" placeholder="现在在做什么？"></textarea></label>
+        <div class="field-grid">
+          <label>标签(逗号分隔)<input id="post-tags" type="text" placeholder="coding,life"></label>
+          <label>地点<input id="post-location" type="text" placeholder="Home"></label>
+        </div>
+        <button id="publish-post" class="btn">发布帖子</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>我的帖子</h2>
+          <button id="refresh-posts" class="btn ghost">刷新</button>
+        </div>
+        <div id="manage-posts-list" class="posts-list"></div>
+      </div>
+    </section>
+
+    <div id="message" class="message hidden"></div>
+  </main>
+
+  <script src="/app.js"></script>
 </body>
 </html>

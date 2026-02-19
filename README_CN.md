@@ -27,9 +27,9 @@
 
 ### 云同步
 - **服务器同步** - 基于密码认证的 RESTful API
-- **公开状态** - 通过 Web 仪表盘分享忙碌/空闲状态
-- **隐私控制** - 选择哪些任务公开显示
-- **Cloudflare 部署** - 使用 Worker + D1 承载 API 与公开仪表盘
+- **公开动态** - 通过网页发布并展示个人状态/帖子流
+- **配置驱动网页** - 通过 `Server/public/config.json` 管理文案和外链
+- **Cloudflare 部署** - 使用 Worker + D1 承载 API 与公开页面
 
 ## 🛠 技术栈
 
@@ -94,7 +94,7 @@ cd life-app
 
 ## 🌐 服务端
 
-服务端采用 Cloudflare Worker 部署，提供数据同步和 Web 仪表盘功能。
+服务端采用 Cloudflare Worker 部署，提供数据同步与公开页面功能。
 
 ### 快速部署
 

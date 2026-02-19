@@ -79,3 +79,39 @@ Token scope should include permissions for Workers and D1 on your Cloudflare acc
 - D1 migrations are incremental; only new migration files are applied remotely.
 - Static assets in `Server/public` and API routes under `/api/v1/*` are served by the same Worker.
 - Commit `Server/worker/pnpm-lock.yaml` after first `pnpm install` so CI can switch to frozen installs.
+
+## V1.1: Status Feed APIs
+
+### New D1 migrations
+
+- `migrations/0002_posts.sql`
+- `migrations/0003_status.sql`
+
+Apply locally:
+
+```bash
+pnpm run db:migrate:local
+```
+
+Apply remotely:
+
+```bash
+pnpm run db:migrate:remote
+```
+
+### Required/optional secrets
+
+- Required:
+  - `SERVER_PASSWORD`
+- Optional:
+  - `DEFAULT_STATUS_TTL_MS` (default: `900000`)
+
+### New endpoints
+
+- `POST /api/v1/posts`
+- `PUT /api/v1/posts/:postId`
+- `DELETE /api/v1/posts/:postId`
+- `GET /api/v1/posts`
+- `POST /api/v1/status/events`
+- `GET /api/v1/status`
+- `GET /api/v1/public/feed`

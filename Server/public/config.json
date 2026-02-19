@@ -1,0 +1,34 @@
+{
+  "siteTitle": "MIO status",
+  "brandName": "MiO meow meow meow",
+  "ownerName": "MiO",
+  "ownerMotto": "",
+  "motto": "记录此刻，持续更新",
+  "headlineTemplate": "看看 {name} 在干什么 O.O",
+  "profileNameTemplate": "MIO",
+  "profileMottoTemplate": "{motto}",
+  "sectionTitles": {
+    "primaryStatus": "当前主状态",
+    "sourceStatus": "来源状态",
+    "posts": "最新帖子",
+    "stats": "状态概览",
+    "links": "外部链接"
+  },
+  "statsLabels": {
+    "postCount": "帖子数",
+    "sourceCount": "激活来源",
+    "primaryStatus": "现在状态"
+  },
+  "links": [
+    {
+      "label": "Steam Profile",
+      "url": "https://steamcommunity.com/",
+      "icon": "sports_esports"
+    },
+    {
+      "label": "GitHub",
+      "url": "https://github.com/",
+      "icon": "code"
+    }
+  ]
+}

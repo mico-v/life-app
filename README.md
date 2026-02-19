@@ -26,9 +26,9 @@ A task management app based on the **Push/Pop stack concept** - treat your daily
 
 ### Sync & Cloud
 - **Server Sync** - RESTful API with password-based authentication
-- **Public Status** - Share your busy/free status via web dashboard
-- **Privacy Control** - Choose which tasks to make public
-- **Cloudflare Runtime** - Worker + D1 powers API and public web dashboard
+- **Public Feed** - Publish and display personal status/posts on the web
+- **Config-Driven Web** - Personal text/links are managed via `Server/public/config.json`
+- **Cloudflare Runtime** - Worker + D1 powers APIs and public web pages
 
 ## 🛠 Tech Stack
 
@@ -92,7 +92,7 @@ For detailed project documentation, see:
 
 ## 🌐 Backend Deployment
 
-Backend APIs and dashboard are deployed as a Cloudflare Worker:
+Backend APIs and public pages are deployed as a Cloudflare Worker:
 - Worker source: `Server/worker`
 - Static assets: `Server/public`
 - Database: Cloudflare D1 (`DB` binding)

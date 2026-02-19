@@ -1,347 +1,505 @@
-/**
- * Life App Web Dashboard
- * Material Design 3 Frontend
- */
+class LifeAppV11 {
+  constructor() {
+    this.path = window.location.pathname
+    this.query = new URLSearchParams(window.location.search)
+    this.isPublish = this.query.get('view') === 'publish' || this.path.startsWith('/publish')
+    this.feed = null
+    this.refreshSeconds = 30
+    this.config = {
+      siteTitle: 'Life App - Status Board',
+      brandName: 'Life App',
+      ownerName: 'Life App User',
+      ownerMotto: '',
+      motto: '实时状态与帖子流',
+      headlineTemplate: '看看 {name} 在干什么 O.O',
+      profileNameTemplate: '{name}',
+      profileMottoTemplate: '{motto}',
+      sectionTitles: {
+        primaryStatus: '当前主状态',
+        sourceStatus: '来源状态',
+        posts: '最新帖子',
+        stats: '状态概览',
+        links: '外部链接'
+      },
+      statsLabels: {
+        postCount: '帖子数',
+        sourceCount: '激活来源',
+        primaryStatus: '主状态'
+      },
+      links: [
+        { label: 'Steam Profile', url: 'https://steamcommunity.com/', icon: 'open_in_new' }
+      ]
+    }
 
-class LifeAppDashboard {
-    constructor() {
-        this.currentPage = 'dashboard';
-        this.tasks = [];
-        this.profiles = [];
-        this.timeline = null;
-        this.selectedTag = '';
-        
-        this.init();
+    this.bootstrap()
+  }
+
+  async bootstrap() {
+    await this.loadConfig()
+    this.applyConfig()
+    this.initTabs()
+    this.initView()
+
+    if (this.isPublish) {
+      this.initManage()
+    } else {
+      this.loadFeed()
+      setInterval(() => this.loadFeed(), this.refreshSeconds * 1000)
     }
-    
-    init() {
-        this.bindNavigation();
-        this.loadData();
-        
-        // Refresh data every 30 seconds
-        setInterval(() => this.loadData(), 30000);
+  }
+
+  async loadConfig() {
+    try {
+      const res = await fetch(`/config.json?v=${Date.now()}`, { cache: 'no-store' })
+      if (!res.ok) {
+        console.warn('config.json not loaded:', res.status)
+        return
+      }
+      const data = await res.json()
+      if (data && typeof data === 'object') {
+        this.config = { ...this.config, ...data }
+      }
+    } catch (err) {
+      console.warn('config.json parse failed:', err)
     }
-    
-    bindNavigation() {
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const page = item.dataset.page;
-                this.navigateTo(page);
-            });
-        });
+  }
+
+  applyConfig() {
+    document.title = this.config.siteTitle || document.title
+
+    const brandName = document.getElementById('brand-name')
+    if (brandName) brandName.textContent = this.config.brandName || 'Life App'
+
+    const motto = document.getElementById('motto')
+    if (motto) motto.textContent = this.config.motto || '实时状态与帖子流'
+
+    this.applyTextConfig()
+    this.renderExternalLinks()
+  }
+
+  applyTextConfig() {
+    const titles = this.config.sectionTitles || {}
+    const statsLabels = this.config.statsLabels || {}
+
+    const map = [
+      ['title-primary-status', titles.primaryStatus],
+      ['title-source-status', titles.sourceStatus],
+      ['title-posts', titles.posts],
+      ['title-stats', titles.stats],
+      ['title-links', titles.links],
+      ['label-post-count', statsLabels.postCount],
+      ['label-source-count', statsLabels.sourceCount],
+      ['label-primary-status', statsLabels.primaryStatus]
+    ]
+
+    map.forEach(([id, text]) => {
+      if (!text) return
+      const el = document.getElementById(id)
+      if (el) el.textContent = text
+    })
+  }
+
+  renderExternalLinks() {
+    const container = document.getElementById('external-links')
+    if (!container) return
+
+    const links = Array.isArray(this.config.links) ? this.config.links : []
+    container.innerHTML = links.map((item) => {
+      const label = this.escapeHtml(item.label || 'Link')
+      const url = this.escapeHtml(item.url || '#')
+      const icon = this.escapeHtml(item.icon || 'open_in_new')
+      const external = url.startsWith('http')
+      return `
+        <a class="link-btn" href="${url}" ${external ? 'target="_blank" rel="noopener noreferrer"' : ''}>
+          <span class="material-icons">${icon}</span>
+          ${label}
+        </a>
+      `
+    }).join('')
+  }
+
+  initTabs() {
+    document.querySelectorAll('.tab').forEach((tab) => {
+      const href = tab.getAttribute('href') || ''
+      const isPublishTab = href.includes('view=publish') || href === '/publish'
+      const isActive = (this.isPublish && isPublishTab) || (!this.isPublish && href === '/')
+      tab.classList.toggle('active', isActive)
+    })
+  }
+
+  initView() {
+    document.getElementById('feed-view').classList.toggle('hidden', this.isPublish)
+    document.getElementById('publish-view').classList.toggle('hidden', !this.isPublish)
+  }
+
+  initAuthStoragePairs(pairs) {
+    pairs.forEach(({ inputId, key }) => {
+      const input = document.getElementById(inputId)
+      if (!input) return
+      input.value = localStorage.getItem(key) || ''
+      input.addEventListener('change', () => {
+        localStorage.setItem(key, input.value.trim())
+      })
+    })
+  }
+
+  readAuth(clientTokenId, serverPasswordId) {
+    const token = (document.getElementById(clientTokenId)?.value || '').trim()
+    const password = (document.getElementById(serverPasswordId)?.value || '').trim()
+    if (!token || !password) {
+      throw new Error('请先填写 client token 与 server password')
     }
-    
-    navigateTo(page) {
-        // Update nav items
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.page === page);
-        });
-        
-        // Update pages
-        document.querySelectorAll('.page').forEach(p => {
-            p.classList.toggle('active', p.id === `${page}-page`);
-        });
-        
-        this.currentPage = page;
-        
-        // Update page title
-        const titles = {
-            dashboard: 'Life App',
-            tasks: '任务列表',
-            timeline: '时间轴',
-            profile: '个人中心'
-        };
-        document.querySelector('.page-title').textContent = titles[page] || 'Life App';
+
+    localStorage.setItem('life_client_token', token)
+    localStorage.setItem('life_server_password', password)
+
+    return {
+      'content-type': 'application/json',
+      'x-client-token': token,
+      'x-server-password': password
     }
-    
-    async loadData() {
-        this.showLoading(true);
-        
-        try {
-            const response = await fetch('/api/v1/public/dashboard');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.tasks = data.publicTasks || [];
-                this.profiles = data.profiles || [];
-                this.updateDashboard(data.stats);
-                this.renderTasks();
-                this.renderProfiles();
-                this.renderTimeline();
-            }
-        } catch (error) {
-            console.error('Failed to load data:', error);
-        }
-        
-        this.showLoading(false);
+  }
+
+  async loadFeed() {
+    try {
+      const res = await fetch('/api/v1/public/feed')
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message || 'Failed to load feed')
+      this.feed = data
+      this.renderFeed(data)
+    } catch (err) {
+      this.showMessage(err.message || '加载失败', true)
     }
-    
-    showLoading(show) {
-        document.getElementById('loading').classList.toggle('active', show);
+  }
+
+  renderFeed(data) {
+    const displayName = this.config.ownerName || 'Life App User'
+    const pageMotto = this.config.motto || '实时状态与帖子流'
+    const profileMotto = this.config.ownerMotto || pageMotto
+
+    const template = this.config.headlineTemplate || '看看 {name} 在干什么 O.O'
+    document.getElementById('headline').textContent = this.applyTemplate(template, {
+      name: displayName,
+      motto: pageMotto
+    })
+    document.getElementById('motto').textContent = pageMotto
+    const profileNameTemplate = this.config.profileNameTemplate || '{name}'
+    const profileMottoTemplate = this.config.profileMottoTemplate || '{motto}'
+    document.getElementById('profile-name').textContent = this.applyTemplate(profileNameTemplate, {
+      name: displayName,
+      motto: profileMotto
+    })
+    document.getElementById('profile-motto').textContent = this.applyTemplate(profileMottoTemplate, {
+      name: displayName,
+      motto: profileMotto
+    })
+
+    const avatar = document.querySelector('.avatar')
+    if (avatar) {
+      const firstChar = displayName.trim().charAt(0) || 'L'
+      avatar.textContent = firstChar.toUpperCase()
     }
-    
-    updateDashboard(stats) {
-        document.getElementById('active-count').textContent = stats?.activeTasks || 0;
-        document.getElementById('completed-count').textContent = 
-            this.tasks.filter(t => t.isCompleted).length;
-        document.getElementById('overdue-count').textContent = stats?.overdueCount || 0;
-    }
-    
-    renderTasks() {
-        const container = document.getElementById('public-tasks');
-        const allTasksContainer = document.getElementById('all-tasks');
-        const tagFilters = document.getElementById('tag-filters');
-        
-        // Get all unique tags
-        const allTags = new Set();
-        this.tasks.forEach(task => {
-            if (task.tags) {
-                const tags = task.tags.split(',').map(t => t.trim()).filter(t => t);
-                tags.forEach(tag => allTags.add(tag));
-            }
-        });
-        
-        // Render tag filters
-        tagFilters.innerHTML = `
-            <button class="chip ${this.selectedTag === '' ? 'active' : ''}" data-tag="">全部</button>
-            ${Array.from(allTags).map(tag => `
-                <button class="chip ${this.selectedTag === tag ? 'active' : ''}" data-tag="${tag}">${tag}</button>
-            `).join('')}
-        `;
-        
-        // Bind tag filter clicks
-        tagFilters.querySelectorAll('.chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                this.selectedTag = chip.dataset.tag;
-                this.renderTasks();
-            });
-        });
-        
-        // Filter tasks
-        let filteredTasks = this.tasks;
-        if (this.selectedTag) {
-            filteredTasks = this.tasks.filter(task => {
-                if (!task.tags) return false;
-                const tags = task.tags.split(',').map(t => t.trim().toLowerCase());
-                return tags.includes(this.selectedTag.toLowerCase());
-            });
-        }
-        
-        // Render public tasks (active only)
-        const activeTasks = filteredTasks.filter(t => !t.isCompleted);
-        if (activeTasks.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <span class="material-icons">inbox</span>
-                    <p>暂无公开任务</p>
-                </div>
-            `;
-        } else {
-            container.innerHTML = activeTasks.slice(0, 5).map(task => this.renderTaskItem(task)).join('');
-        }
-        
-        // Render all tasks
-        if (filteredTasks.length === 0) {
-            allTasksContainer.innerHTML = `
-                <div class="empty-state">
-                    <span class="material-icons">task</span>
-                    <p>暂无任务</p>
-                </div>
-            `;
-        } else {
-            allTasksContainer.innerHTML = filteredTasks.map(task => this.renderTaskItem(task)).join('');
-        }
-    }
-    
-    renderTaskItem(task) {
-        const now = Date.now();
-        const isOverdue = task.deadline && task.deadline < now && !task.isCompleted;
-        const priorityLabels = { 1: 'low', 2: 'medium', 3: 'high' };
-        const priorityNames = { 1: '低', 2: '中', 3: '高' };
-        
-        const tags = task.tags ? task.tags.split(',').map(t => t.trim()).filter(t => t) : [];
-        
+
+    const primary = data.status?.primary || { status: 'Offline', source: 'system' }
+    const primaryText = primary.status || 'Offline'
+    document.getElementById('primary-status-text').textContent = primaryText
+    document.getElementById('primary-status-meta').textContent = `source: ${primary.source || 'system'}`
+    document.getElementById('last-updated').textContent = primary.observed_at ? `updated ${this.formatDateTime(primary.observed_at)}` : 'no active status'
+
+    document.getElementById('stat-primary').textContent = primaryText
+
+    const sourceList = document.getElementById('source-status-list')
+    const sources = data.status?.sources || []
+    document.getElementById('stat-source-count').textContent = String(sources.length)
+
+    if (sources.length === 0) {
+      sourceList.innerHTML = '<div class="empty">暂无有效来源状态</div>'
+    } else {
+      sourceList.innerHTML = sources.map((s) => {
+        const expires = s.expires_at ? this.formatRelative(s.expires_at) : '-'
+        const sourceClass = s.source === 'manual' ? 'manual' : (s.source === 'custom' ? 'custom' : 'other')
         return `
-            <div class="task-item ${task.isCompleted ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}">
-                <div class="task-checkbox ${task.isCompleted ? 'checked' : ''}">
-                    ${task.isCompleted ? '<span class="material-icons">check</span>' : ''}
-                </div>
-                <div class="task-content">
-                    <div class="task-title">${this.escapeHtml(task.title)}</div>
-                    <div class="task-meta">
-                        ${task.deadline ? `
-                            <div class="task-deadline">
-                                <span class="material-icons">schedule</span>
-                                ${this.formatDate(task.deadline)}
-                            </div>
-                        ` : ''}
-                        <span class="priority-badge ${priorityLabels[task.priority] || 'medium'}">
-                            ${priorityNames[task.priority] || '中'}
-                        </span>
-                        ${tags.length > 0 ? `
-                            <div class="task-tags">
-                                ${tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                    ${task.progress > 0 ? `
-                        <div class="task-progress">
-                            <div class="task-progress-fill" style="width: ${task.progress * 100}%"></div>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
+          <article class="source-item ${sourceClass}">
+            <div class="source-head">${this.escapeHtml(s.source)} · ${this.escapeHtml(s.status)}</div>
+            <p class="muted">observed ${this.formatDateTime(s.observed_at)}</p>
+            <p class="muted">expires in ${expires}</p>
+          </article>
+        `
+      }).join('')
     }
-    
-    renderProfiles() {
-        const container = document.getElementById('profiles');
-        
-        if (this.profiles.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <span class="material-icons">people</span>
-                    <p>暂无用户</p>
-                </div>
-            `;
-            return;
+
+    const posts = data.posts || []
+    document.getElementById('stat-post-count').textContent = String(posts.length)
+
+    const postsList = document.getElementById('posts-list')
+    if (posts.length === 0) {
+      postsList.innerHTML = '<div class="empty">暂无帖子</div>'
+    } else {
+      postsList.innerHTML = posts.map((p) => this.renderPostCard(p)).join('')
+    }
+  }
+
+  initManage() {
+    this.initAuthStoragePairs([
+      { inputId: 'auth-client-token', key: 'life_client_token' },
+      { inputId: 'auth-server-password', key: 'life_server_password' }
+    ])
+
+    document.getElementById('publish-status').addEventListener('click', async () => {
+      try {
+        const ttl = Number(document.getElementById('status-ttl').value || '15')
+        const metaRaw = document.getElementById('status-meta').value.trim()
+        await this.publishStatus({
+          authClientId: 'auth-client-token',
+          authPasswordId: 'auth-server-password',
+          statusId: 'status-text',
+          ttlMinutes: ttl,
+          metaRaw
+        })
+        this.showMessage('状态已发布')
+      } catch (err) {
+        this.showMessage(err.message || '状态发布失败', true)
+      }
+    })
+
+    document.getElementById('publish-post').addEventListener('click', async () => {
+      try {
+        await this.publishPost({
+          authClientId: 'auth-client-token',
+          authPasswordId: 'auth-server-password',
+          contentId: 'post-content',
+          tagsId: 'post-tags',
+          locationId: 'post-location'
+        })
+        document.getElementById('post-content').value = ''
+        document.getElementById('post-tags').value = ''
+        document.getElementById('post-location').value = ''
+        await this.loadMyPosts()
+        this.showMessage('帖子已发布')
+      } catch (err) {
+        this.showMessage(err.message || '帖子发布失败', true)
+      }
+    })
+
+    document.getElementById('refresh-posts').addEventListener('click', async () => {
+      try {
+        await this.loadMyPosts()
+      } catch (err) {
+        this.showMessage(err.message || '加载失败', true)
+      }
+    })
+
+    this.loadMyPosts().catch((err) => this.showMessage(err.message || '加载失败', true))
+  }
+
+  async publishStatus({ authClientId, authPasswordId, statusId, ttlMinutes, metaRaw }) {
+    const headers = this.readAuth(authClientId, authPasswordId)
+    const status = (document.getElementById(statusId)?.value || '').trim()
+    if (!status) throw new Error('状态内容不能为空')
+
+    let meta = undefined
+    if (metaRaw) {
+      try {
+        meta = JSON.parse(metaRaw)
+      } catch {
+        throw new Error('Meta 必须是合法 JSON')
+      }
+    }
+
+    const observedAt = Date.now()
+    const expiresAt = observedAt + Math.max(1, Number(ttlMinutes) || 15) * 60 * 1000
+
+    const res = await fetch('/api/v1/status/events', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        source: 'manual',
+        status,
+        observed_at: observedAt,
+        expires_at: expiresAt,
+        meta
+      })
+    })
+
+    const data = await res.json()
+    if (!res.ok || !data.success) throw new Error(data.message || '请求失败')
+  }
+
+  async publishPost({ authClientId, authPasswordId, contentId, tagsId, locationId }) {
+    const headers = this.readAuth(authClientId, authPasswordId)
+    const content = (document.getElementById(contentId)?.value || '').trim()
+    const tags = (document.getElementById(tagsId)?.value || '').trim()
+    const location = (document.getElementById(locationId)?.value || '').trim()
+
+    if (!content) throw new Error('帖子内容不能为空')
+
+    const res = await fetch('/api/v1/posts', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ content, tags: tags || null, location: location || null })
+    })
+
+    const data = await res.json()
+    if (!res.ok || !data.success) throw new Error(data.message || '请求失败')
+  }
+
+  async loadMyPosts() {
+    const headers = this.readAuth('auth-client-token', 'auth-server-password')
+    const res = await fetch('/api/v1/posts', { headers })
+    const data = await res.json()
+    if (!res.ok || !data.success) throw new Error(data.message || '请求失败')
+
+    const container = document.getElementById('manage-posts-list')
+    const posts = data.posts || []
+    if (posts.length === 0) {
+      container.innerHTML = '<div class="empty">暂无帖子</div>'
+      return
+    }
+
+    container.innerHTML = posts.map((p) => `
+      <article class="post-card">
+        <div class="post-main">
+          <p>${this.escapeHtml(p.content)}</p>
+          <div class="post-meta">
+            <span>${this.formatDateTime(p.created_at)}</span>
+            ${p.tags ? `<span>#${this.escapeHtml(p.tags)}</span>` : ''}
+            ${p.location ? `<span>@${this.escapeHtml(p.location)}</span>` : ''}
+          </div>
+        </div>
+        <div class="post-actions">
+          <button class="btn ghost" data-action="edit" data-id="${p.id}">编辑</button>
+          <button class="btn danger" data-action="delete" data-id="${p.id}">删除</button>
+        </div>
+      </article>
+    `).join('')
+
+    container.querySelectorAll('button[data-action="edit"]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.id
+        const oldPost = posts.find((item) => item.id === id)
+        if (!oldPost) return
+
+        const nextContent = window.prompt('编辑内容', oldPost.content)
+        if (nextContent === null) return
+
+        const nextTags = window.prompt('编辑标签(逗号分隔)', oldPost.tags || '')
+        if (nextTags === null) return
+
+        const nextLocation = window.prompt('编辑地点', oldPost.location || '')
+        if (nextLocation === null) return
+
+        try {
+          await this.updatePost(id, nextContent, nextTags, nextLocation)
+          await this.loadMyPosts()
+          this.showMessage('帖子已更新')
+        } catch (err) {
+          this.showMessage(err.message || '更新失败', true)
         }
-        
-        container.innerHTML = this.profiles.map(profile => `
-            <div class="profile-list-item">
-                <div class="profile-list-avatar">
-                    <span class="material-icons">person</span>
-                </div>
-                <div class="profile-list-info">
-                    <div class="profile-list-name">${this.escapeHtml(profile.displayName)}</div>
-                    <div class="profile-list-motto">"${this.escapeHtml(profile.motto)}"</div>
-                </div>
-                <div class="status-badge ${(profile.status || '').toLowerCase()}">
-                    <span class="status-dot"></span>
-                </div>
-            </div>
-        `).join('');
-        
-        // Update profile page
-        const firstProfile = this.profiles[0];
-        if (firstProfile) {
-            document.getElementById('profile-name').textContent = firstProfile.displayName;
-            document.getElementById('profile-motto').textContent = `"${firstProfile.motto}"`;
-            document.getElementById('profile-status').innerHTML = `
-                <span class="status-dot"></span>
-                ${this.getStatusLabel(firstProfile.status)}
-            `;
-            document.getElementById('profile-status').className = 
-                `status-badge ${(firstProfile.status || '').toLowerCase()}`;
+      })
+    })
+
+    container.querySelectorAll('button[data-action="delete"]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.id
+        if (!window.confirm('确认删除这条帖子？')) return
+        try {
+          await this.deletePost(id)
+          await this.loadMyPosts()
+          this.showMessage('帖子已删除')
+        } catch (err) {
+          this.showMessage(err.message || '删除失败', true)
         }
-        
-        // Update profile stats
-        const activeTasks = this.tasks.filter(t => !t.isCompleted).length;
-        const completedTasks = this.tasks.filter(t => t.isCompleted).length;
-        document.getElementById('profile-active').textContent = activeTasks;
-        document.getElementById('profile-completed').textContent = completedTasks;
-        // Calculate today's completed tasks
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date(todayStart);
-        todayEnd.setDate(todayEnd.getDate() + 1);
-        const completedToday = this.tasks.filter(t => {
-            // Use t.completedAt if available, otherwise fallback to t.dueDate if that's how completion is tracked
-            const completedDate = t.completedAt ? new Date(t.completedAt) : (t.isCompleted && t.dueDate ? new Date(t.dueDate) : null);
-            return t.isCompleted && completedDate && completedDate >= todayStart && completedDate < todayEnd;
-        }).length;
-        document.getElementById('profile-today').textContent = completedToday;
+      })
+    })
+  }
+
+  async updatePost(id, content, tags, location) {
+    const headers = this.readAuth('auth-client-token', 'auth-server-password')
+    const payload = {
+      content: content.trim(),
+      tags: tags.trim() || null,
+      location: location.trim() || null
     }
-    
-    renderTimeline() {
-        const now = Date.now();
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date(todayStart);
-        todayEnd.setDate(todayEnd.getDate() + 1);
-        const tomorrowEnd = new Date(todayStart);
-        tomorrowEnd.setDate(tomorrowEnd.getDate() + 2);
-        const weekEnd = new Date(todayStart);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-        
-        const timeline = {
-            overdue: [],
-            today: [],
-            tomorrow: [],
-            thisWeek: [],
-            later: []
-        };
-        
-        this.tasks.filter(t => !t.isCompleted).forEach(task => {
-            const targetTime = task.deadline;
-            
-            if (!targetTime) {
-                timeline.later.push(task);
-            } else if (targetTime < now) {
-                timeline.overdue.push(task);
-            } else if (targetTime < todayEnd.getTime()) {
-                timeline.today.push(task);
-            } else if (targetTime < tomorrowEnd.getTime()) {
-                timeline.tomorrow.push(task);
-            } else if (targetTime < weekEnd.getTime()) {
-                timeline.thisWeek.push(task);
-            } else {
-                timeline.later.push(task);
-            }
-        });
-        
-        const sections = [
-            { id: 'overdue-tasks', tasks: timeline.overdue },
-            { id: 'today-tasks', tasks: timeline.today },
-            { id: 'tomorrow-tasks', tasks: timeline.tomorrow },
-            { id: 'week-tasks', tasks: timeline.thisWeek },
-            { id: 'later-tasks', tasks: timeline.later }
-        ];
-        
-        sections.forEach(section => {
-            const container = document.getElementById(section.id);
-            if (section.tasks.length === 0) {
-                container.innerHTML = `<p style="color: var(--md-sys-color-on-surface-variant); font-size: 14px;">暂无任务</p>`;
-            } else {
-                container.innerHTML = section.tasks.map(task => this.renderTaskItem(task)).join('');
-            }
-        });
-    }
-    
-    formatDate(timestamp) {
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diff = date - now;
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        
-        if (days < 0) {
-            return `已逾期 ${-days} 天`;
-        } else if (days === 0) {
-            return '今天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-        } else if (days === 1) {
-            return '明天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-        } else {
-            return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-        }
-    }
-    
-    getStatusLabel(status) {
-        const labels = {
-            'Available': '空闲',
-            'Busy': '忙碌',
-            'Away': '离开'
-        };
-        return labels[status] || status || '空闲';
-    }
-    
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+    if (!payload.content) throw new Error('帖子内容不能为空')
+
+    const res = await fetch(`/api/v1/posts/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(payload)
+    })
+
+    const data = await res.json()
+    if (!res.ok || !data.success) throw new Error(data.message || '请求失败')
+  }
+
+  async deletePost(id) {
+    const headers = this.readAuth('auth-client-token', 'auth-server-password')
+    const res = await fetch(`/api/v1/posts/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers
+    })
+
+    const data = await res.json()
+    if (!res.ok || !data.success) throw new Error(data.message || '请求失败')
+  }
+
+  renderPostCard(post) {
+    return `
+      <article class="post-card">
+        <p>${this.escapeHtml(post.content)}</p>
+        <div class="post-meta">
+          <span>${this.formatDateTime(post.created_at)}</span>
+          ${post.tags ? `<span>#${this.escapeHtml(post.tags)}</span>` : ''}
+          ${post.location ? `<span>@${this.escapeHtml(post.location)}</span>` : ''}
+        </div>
+      </article>
+    `
+  }
+
+  formatDateTime(timestamp) {
+    if (!timestamp) return '-'
+    return new Date(timestamp).toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  formatRelative(timestamp) {
+    const diffMs = timestamp - Date.now()
+    const diffMin = Math.round(diffMs / 60000)
+    if (diffMin <= 0) return 'soon'
+    return `${diffMin}m`
+  }
+
+  showMessage(text, isError = false) {
+    const message = document.getElementById('message')
+    message.textContent = text
+    message.classList.remove('hidden')
+    message.classList.toggle('error', isError)
+    clearTimeout(this.messageTimer)
+    this.messageTimer = setTimeout(() => {
+      message.classList.add('hidden')
+    }, 2500)
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div')
+    div.textContent = text || ''
+    return div.innerHTML
+  }
+
+  applyTemplate(template, vars) {
+    let result = String(template || '')
+    Object.entries(vars || {}).forEach(([key, value]) => {
+      result = result.split(`{${key}}`).join(String(value ?? ''))
+    })
+    return result
+  }
 }
 
-// Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new LifeAppDashboard();
-});
+  window.app = new LifeAppV11()
+})

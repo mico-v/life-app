@@ -1,5 +1,6 @@
 package com.example.android16demo.network
 
+import com.example.android16demo.BuildConfig
 import com.example.android16demo.network.api.LifeAppApi
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -17,7 +18,7 @@ object RetrofitClient {
     private var api: LifeAppApi? = null
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
     }
 
     private val okHttpClient = OkHttpClient.Builder()

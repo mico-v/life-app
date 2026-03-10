@@ -2,6 +2,7 @@ package com.example.android16demo.data.sync
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.util.UUID
@@ -42,17 +43,33 @@ class SyncPreferences(context: Context) {
     private val prefs: SharedPreferences
     
     init {
-        // Use encrypted shared preferences for sensitive data
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        prefs = EncryptedSharedPreferences.create(
-            context,
-            PREF_FILE_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        prefs = createPreferences(context)
+    }
+
+    private fun createPreferences(context: Context): SharedPreferences {
+        return try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            EncryptedSharedPreferences.create(
+                context,
+                PREF_FILE_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            Log.w("SyncPreferences", "EncryptedSharedPreferences unavailable, using plain prefs: ${e.message}")
+            // Delete any corrupted encrypted prefs file and fall back to plain SharedPreferences.
+            // Ignore deletion failures — the file may not exist or may be in use; the fallback
+            // prefs use a distinct name so data from any partial encrypted file is simply unused.
+            try {
+                context.deleteSharedPreferences(PREF_FILE_NAME)
+            } catch (deleteEx: Exception) {
+                Log.w("SyncPreferences", "Failed to delete corrupted prefs file: ${deleteEx.message}")
+            }
+            context.getSharedPreferences(PREF_FILE_NAME + "_plain", Context.MODE_PRIVATE)
+        }
     }
     
     var authToken: String?

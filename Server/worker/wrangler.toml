@@ -16,3 +16,19 @@ migrations_dir = "migrations"
 [observability.logs]
 enabled = true
 invocation_logs = true
+
+# Preview environment for web_dev branch
+# NOTE: For proper environment isolation, set CLOUDFLARE_PREVIEW_DB_ID as a
+# repository secret and replace the database_id below before deploying.
+[env.preview]
+name = "life-app-worker-preview"
+
+[env.preview.assets]
+directory = "../public"
+binding = "ASSETS"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "life-app-db-preview"
+database_id = "ee0d526f-3a06-4785-b3e8-840ab9db3a09"
+migrations_dir = "migrations"
